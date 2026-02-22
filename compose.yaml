@@ -27,9 +27,32 @@ services:
     <<: *php-base
     ports:
       - "8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "php -r 'exit((int) (@file_get_contents(\"http://127.0.0.1:8080/health\") === false));'"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     depends_on:
       database:
-        condition: service_started
+        condition: service_healthy
+      converter-api:
+        condition: service_healthy
+
+  converter-api:
+    build:
+      context: ./goconverter
+      dockerfile: Dockerfile
+    environment:
+      - PORT=8081
+    ports:
+      - "8081:8081"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:8081/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   typescript-worker:
     <<: *php-base
