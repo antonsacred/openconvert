@@ -15,7 +15,9 @@ import (
 // @Success 200 {object} ConversionsResponse
 // @Router /v1/conversions [get]
 func listConversionsHandler(c *gin.Context) {
+	canonicalFormats := converter.ConversionTargetsBySource()
+
 	c.JSON(http.StatusOK, ConversionsResponse{
-		Formats: converter.ConversionTargetsBySource(),
+		Formats: expandConversionFormatsWithAliases(canonicalFormats),
 	})
 }

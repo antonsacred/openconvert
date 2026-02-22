@@ -9,9 +9,12 @@ import (
 	"image/png"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"slices"
 	"strings"
 	"testing"
+
+	"goconverter/internal/converter"
 
 	"github.com/gin-gonic/gin"
 )
@@ -61,22 +64,37 @@ func TestConversionsEndpoint(t *testing.T) {
 		t.Fatalf("expected at least one source format")
 	}
 
-	if len(body.Formats) != 3 {
-		t.Fatalf("expected 3 source formats, got %d (%v)", len(body.Formats), body.Formats)
+	expectedFormats := expandConversionFormatsWithAliases(converter.ConversionTargetsBySource())
+	if !reflect.DeepEqual(normalizeFormatsMap(body.Formats), normalizeFormatsMap(expectedFormats)) {
+		t.Fatalf("unexpected formats payload.\nexpected: %v\ngot: %v", normalizeFormatsMap(expectedFormats), normalizeFormatsMap(body.Formats))
+	}
+}
+
+func TestConversionsEndpointIncludesAliasesForSourcesAndTargets(t *testing.T) {
+	router := newTestRouter()
+
+	req := httptest.NewRequest(http.MethodGet, "/v1/conversions", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, w.Code)
 	}
 
-	targets, ok := body.Formats["png"]
-	if !ok {
-		t.Fatalf("expected key \"png\" in response, got %v", body.Formats)
+	var body struct {
+		Formats map[string][]string `json:"formats"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
+		t.Fatalf("expected JSON response, got error: %v", err)
 	}
 
-	if len(targets) != 2 {
-		t.Fatalf("expected exactly two targets for png, got %d (%v)", len(targets), targets)
-	}
+	assertSourceAliasMirrorsCanonical(t, body.Formats, "jpeg", "jpg")
+	assertSourceAliasMirrorsCanonical(t, body.Formats, "tiff", "tif")
+	assertSourceAliasMirrorsCanonical(t, body.Formats, "heif", "heic")
 
-	if !slices.Contains(targets, "jpg") || !slices.Contains(targets, "webp") {
-		t.Fatalf("expected png targets to include [jpg webp], got %v", targets)
-	}
+	assertTargetAliasMirrorsCanonical(t, body.Formats, "jpeg", "jpg")
+	assertTargetAliasMirrorsCanonical(t, body.Formats, "tiff", "tif")
+	assertTargetAliasMirrorsCanonical(t, body.Formats, "heif", "heic")
 }
 
 func TestConvertEndpoint(t *testing.T) {
@@ -84,7 +102,7 @@ func TestConvertEndpoint(t *testing.T) {
 
 	payload := map[string]string{
 		"from":          "png",
-		"to":            "jpg",
+		"to":            "jpeg",
 		"fileName":      "input.png",
 		"contentBase64": base64.StdEncoding.EncodeToString(mustEncodePNG(t)),
 	}
@@ -114,11 +132,11 @@ func TestConvertEndpoint(t *testing.T) {
 		t.Fatalf("failed to decode response JSON: %v", err)
 	}
 
-	if response.From != "png" || response.To != "jpg" {
-		t.Fatalf("expected from/to png->jpg, got %s->%s", response.From, response.To)
+	if response.From != "png" || response.To != "jpeg" {
+		t.Fatalf("expected from/to png->jpeg, got %s->%s", response.From, response.To)
 	}
-	if response.FileName != "input.jpg" {
-		t.Fatalf("expected output fileName input.jpg, got %q", response.FileName)
+	if response.FileName != "input.jpeg" {
+		t.Fatalf("expected output fileName input.jpeg, got %q", response.FileName)
 	}
 	if response.MimeType != "image/jpeg" {
 		t.Fatalf("expected mime image/jpeg, got %q", response.MimeType)
@@ -137,6 +155,98 @@ func TestConvertEndpoint(t *testing.T) {
 
 	if w.Header().Get("X-Request-Id") == "" {
 		t.Fatalf("expected X-Request-Id response header")
+	}
+}
+
+func TestConvertEndpointSupportsAVIF(t *testing.T) {
+	router := newTestRouter()
+
+	if _, ok := converter.FindConverter("png", "avif"); !ok {
+		t.Skip("png -> avif conversion is not registered in current runtime")
+	}
+
+	payload := map[string]string{
+		"from":          "png",
+		"to":            "avif",
+		"fileName":      "input.png",
+		"contentBase64": base64.StdEncoding.EncodeToString(mustEncodePNG(t)),
+	}
+	body, err := json.Marshal(payload)
+	if err != nil {
+		t.Fatalf("failed to marshal payload: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/v1/convert", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body: %s", http.StatusOK, w.Code, w.Body.String())
+	}
+
+	var response struct {
+		To       string `json:"to"`
+		FileName string `json:"fileName"`
+		MimeType string `json:"mimeType"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+		t.Fatalf("failed to decode response JSON: %v", err)
+	}
+
+	if response.To != "avif" {
+		t.Fatalf("expected response to=avif, got %q", response.To)
+	}
+	if response.FileName != "input.avif" {
+		t.Fatalf("expected output fileName input.avif, got %q", response.FileName)
+	}
+	if response.MimeType != "image/avif" {
+		t.Fatalf("expected mime image/avif, got %q", response.MimeType)
+	}
+}
+
+func TestConvertEndpointNormalizesJPGAlias(t *testing.T) {
+	router := newTestRouter()
+
+	payload := map[string]string{
+		"from":          "png",
+		"to":            "jpg",
+		"fileName":      "input.png",
+		"contentBase64": base64.StdEncoding.EncodeToString(mustEncodePNG(t)),
+	}
+	body, err := json.Marshal(payload)
+	if err != nil {
+		t.Fatalf("failed to marshal payload: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/v1/convert", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d, body: %s", http.StatusOK, w.Code, w.Body.String())
+	}
+
+	var response struct {
+		To       string `json:"to"`
+		FileName string `json:"fileName"`
+		MimeType string `json:"mimeType"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+		t.Fatalf("failed to decode response JSON: %v", err)
+	}
+
+	if response.To != "jpeg" {
+		t.Fatalf("expected response to=jpeg after alias normalization, got %q", response.To)
+	}
+	if response.FileName != "input.jpeg" {
+		t.Fatalf("expected output fileName input.jpeg, got %q", response.FileName)
+	}
+	if response.MimeType != "image/jpeg" {
+		t.Fatalf("expected mime image/jpeg, got %q", response.MimeType)
 	}
 }
 
@@ -441,4 +551,50 @@ func mustEncodePNG(t *testing.T) []byte {
 	}
 
 	return buf.Bytes()
+}
+
+func normalizeFormatsMap(input map[string][]string) map[string][]string {
+	output := make(map[string][]string, len(input))
+	for source, targets := range input {
+		cloned := slices.Clone(targets)
+		slices.Sort(cloned)
+		output[source] = cloned
+	}
+
+	return output
+}
+
+func assertSourceAliasMirrorsCanonical(t *testing.T, formats map[string][]string, canonical string, alias string) {
+	t.Helper()
+
+	canonicalTargets, canonicalExists := formats[canonical]
+	aliasTargets, aliasExists := formats[alias]
+	if canonicalExists != aliasExists {
+		t.Fatalf("expected source alias presence to match canonical: %s=%t %s=%t", canonical, canonicalExists, alias, aliasExists)
+	}
+	if !canonicalExists {
+		return
+	}
+
+	if !reflect.DeepEqual(sortedClone(canonicalTargets), sortedClone(aliasTargets)) {
+		t.Fatalf("expected %s and %s source entries to expose same targets: %v vs %v", canonical, alias, canonicalTargets, aliasTargets)
+	}
+}
+
+func assertTargetAliasMirrorsCanonical(t *testing.T, formats map[string][]string, canonical string, alias string) {
+	t.Helper()
+
+	for source, targets := range formats {
+		hasCanonical := slices.Contains(targets, canonical)
+		hasAlias := slices.Contains(targets, alias)
+		if hasCanonical != hasAlias {
+			t.Fatalf("expected %s and %s target aliases to match for source %s, got targets=%v", canonical, alias, source, targets)
+		}
+	}
+}
+
+func sortedClone(input []string) []string {
+	output := slices.Clone(input)
+	slices.Sort(output)
+	return output
 }

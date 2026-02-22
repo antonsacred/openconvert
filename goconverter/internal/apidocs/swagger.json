@@ -160,7 +160,7 @@
                 },
                 "to": {
                     "type": "string",
-                    "example": "jpg"
+                    "example": "jpeg"
                 }
             }
         },
@@ -172,7 +172,7 @@
                 },
                 "fileName": {
                     "type": "string",
-                    "example": "input.jpg"
+                    "example": "input.jpeg"
                 },
                 "from": {
                     "type": "string",
@@ -184,7 +184,7 @@
                 },
                 "to": {
                     "type": "string",
-                    "example": "jpg"
+                    "example": "jpeg"
                 }
             }
         },

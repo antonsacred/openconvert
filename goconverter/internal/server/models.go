@@ -12,15 +12,15 @@ type ConversionsResponse struct {
 
 type ConvertRequest struct {
 	From          string `json:"from" example:"png"`
-	To            string `json:"to" example:"jpg"`
+	To            string `json:"to" example:"jpeg"`
 	FileName      string `json:"fileName" example:"input.png"`
 	ContentBase64 string `json:"contentBase64"`
 }
 
 type ConvertResponse struct {
 	From          string `json:"from" example:"png"`
-	To            string `json:"to" example:"jpg"`
-	FileName      string `json:"fileName" example:"input.jpg"`
+	To            string `json:"to" example:"jpeg"`
+	FileName      string `json:"fileName" example:"input.jpeg"`
 	MimeType      string `json:"mimeType" example:"image/jpeg"`
 	ContentBase64 string `json:"contentBase64"`
 }

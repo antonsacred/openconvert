@@ -3,15 +3,17 @@ package converter
 import "testing"
 
 func TestPNGToWEBPConverterConvert(t *testing.T) {
+	requireFormatPairSupport(t, "png", "webp")
+
 	c := NewPNGToWEBPConverter()
-	input := mustEncodePNG(t)
+	input := mustEncodeFormat(t, "png")
 
 	output, err := c.Convert(input)
 	if err != nil {
 		t.Fatalf("expected conversion to succeed, got error: %v", err)
 	}
 
-	assertWEBPOutput(t, output)
+	assertOutputFormat(t, output, "webp")
 }
 
 func TestPNGToWEBPConverterConvertRejectsInvalidInput(t *testing.T) {

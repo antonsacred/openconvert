@@ -4,31 +4,78 @@ import (
 	"reflect"
 	"slices"
 	"testing"
+
+	"github.com/h2non/bimg"
 )
 
 func TestConversionTargetsBySource(t *testing.T) {
 	output := ConversionTargetsBySource()
+	expected := expectedConversionTargetsBySource()
 
-	expected := map[string][]string{
-		"png":  {"jpg", "webp"},
-		"jpg":  {"png", "webp"},
-		"webp": {"jpg", "png"},
+	if !reflect.DeepEqual(normalizeTargetsMap(output), normalizeTargetsMap(expected)) {
+		t.Fatalf("unexpected conversion matrix.\nexpected: %v\ngot: %v", normalizeTargetsMap(expected), normalizeTargetsMap(output))
 	}
+}
 
-	if len(output) != len(expected) {
-		t.Fatalf("expected %d source formats, got %d", len(expected), len(output))
-	}
+func TestFindConverter(t *testing.T) {
+	expected := expectedConversionTargetsBySource()
 
-	for source, expectedTargets := range expected {
-		targets, ok := output[source]
-		if !ok {
-			t.Fatalf("expected output to include key %q, got %v", source, output)
-		}
-
-		slices.Sort(targets)
-		slices.Sort(expectedTargets)
-		if !reflect.DeepEqual(targets, expectedTargets) {
-			t.Fatalf("expected output for %s to be %v, got %v", source, expectedTargets, targets)
+	for source, targets := range expected {
+		for _, target := range targets {
+			_, ok := FindConverter(source, target)
+			if !ok {
+				t.Fatalf("expected converter for %s -> %s", source, target)
+			}
 		}
 	}
+
+	for _, format := range []string{"avif", "gif", "heif", "jpeg", "png", "tiff", "webp"} {
+		if !bimg.IsTypeNameSupported(format) {
+			continue
+		}
+		if !bimg.IsTypeNameSupportedSave(format) {
+			continue
+		}
+
+		_, ok := FindConverter(format, format)
+		if ok {
+			t.Fatalf("did not expect converter for same-format conversion %s -> %s", format, format)
+		}
+	}
+}
+
+func expectedConversionTargetsBySource() map[string][]string {
+	loadSupportedSources := []string{"avif", "gif", "heif", "jpeg", "png", "tiff", "webp", "magick", "pdf", "svg"}
+	saveSupportedTargets := []string{"avif", "gif", "heif", "jpeg", "png", "tiff", "webp"}
+
+	expected := make(map[string][]string)
+	for _, source := range loadSupportedSources {
+		if !bimg.IsTypeNameSupported(source) {
+			continue
+		}
+
+		for _, target := range saveSupportedTargets {
+			if source == target {
+				continue
+			}
+			if !bimg.IsTypeNameSupportedSave(target) {
+				continue
+			}
+
+			expected[source] = append(expected[source], target)
+		}
+	}
+
+	return expected
+}
+
+func normalizeTargetsMap(input map[string][]string) map[string][]string {
+	output := make(map[string][]string, len(input))
+	for source, targets := range input {
+		cloned := slices.Clone(targets)
+		slices.Sort(cloned)
+		output[source] = cloned
+	}
+
+	return output
 }

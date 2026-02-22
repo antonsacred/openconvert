@@ -167,7 +167,7 @@ const docTemplate = `{
                 },
                 "to": {
                     "type": "string",
-                    "example": "jpg"
+                    "example": "jpeg"
                 }
             }
         },
@@ -179,7 +179,7 @@ const docTemplate = `{
                 },
                 "fileName": {
                     "type": "string",
-                    "example": "input.jpg"
+                    "example": "input.jpeg"
                 },
                 "from": {
                     "type": "string",
@@ -191,7 +191,7 @@ const docTemplate = `{
                 },
                 "to": {
                     "type": "string",
-                    "example": "jpg"
+                    "example": "jpeg"
                 }
             }
         },

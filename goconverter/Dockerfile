@@ -14,7 +14,11 @@ RUN CGO_ENABLED=1 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/goconve
 FROM alpine:3.22
 WORKDIR /
 
-RUN apk add --no-cache vips
+RUN apk add --no-cache \
+    vips \
+    vips-heif \
+    vips-magick \
+    vips-poppler
 
 COPY --from=builder /out/goconverter /goconverter
 

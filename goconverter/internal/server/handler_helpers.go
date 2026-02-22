@@ -2,6 +2,7 @@ package server
 
 import (
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 
@@ -18,6 +19,14 @@ const (
 var conversionConcurrencyMu sync.Mutex
 var currentConcurrentConversions int
 
+var canonicalFormatAliases = map[string][]string{
+	"heif": {"heic"},
+	"jpeg": {"jpg"},
+	"tiff": {"tif"},
+}
+
+var aliasToCanonicalFormat = buildAliasToCanonicalFormat()
+
 func writeError(c *gin.Context, statusCode int, code string, message string) {
 	c.Set(errorCodeContextKey, code)
 	c.JSON(statusCode, ErrorResponse{
@@ -30,7 +39,73 @@ func writeError(c *gin.Context, statusCode int, code string, message string) {
 }
 
 func normalizeFormat(format string) string {
-	return strings.ToLower(strings.TrimSpace(format))
+	return canonicalFormat(format)
+}
+
+func canonicalFormat(format string) string {
+	normalized := strings.ToLower(strings.TrimSpace(format))
+	if canonical, ok := aliasToCanonicalFormat[normalized]; ok {
+		return canonical
+	}
+
+	return normalized
+}
+
+func aliasesForFormat(format string) []string {
+	canonical := canonicalFormat(format)
+	aliases, ok := canonicalFormatAliases[canonical]
+	if !ok {
+		return []string{canonical}
+	}
+
+	output := []string{canonical}
+	output = append(output, aliases...)
+	return output
+}
+
+func expandConversionFormatsWithAliases(canonicalFormats map[string][]string) map[string][]string {
+	targetSetsBySource := make(map[string]map[string]struct{}, len(canonicalFormats))
+
+	for sourceCanonical, canonicalTargets := range canonicalFormats {
+		sourceFormats := aliasesForFormat(sourceCanonical)
+
+		for _, source := range sourceFormats {
+			targetSet, ok := targetSetsBySource[source]
+			if !ok {
+				targetSet = map[string]struct{}{}
+				targetSetsBySource[source] = targetSet
+			}
+
+			for _, targetCanonical := range canonicalTargets {
+				for _, target := range aliasesForFormat(targetCanonical) {
+					targetSet[target] = struct{}{}
+				}
+			}
+		}
+	}
+
+	output := make(map[string][]string, len(targetSetsBySource))
+	for source, targetSet := range targetSetsBySource {
+		targets := make([]string, 0, len(targetSet))
+		for target := range targetSet {
+			targets = append(targets, target)
+		}
+		sort.Strings(targets)
+		output[source] = targets
+	}
+
+	return output
+}
+
+func buildAliasToCanonicalFormat() map[string]string {
+	output := map[string]string{}
+	for canonical, aliases := range canonicalFormatAliases {
+		output[canonical] = canonical
+		for _, alias := range aliases {
+			output[alias] = canonical
+		}
+	}
+	return output
 }
 
 func outputFileName(inputFileName string, targetFormat string) string {
@@ -49,11 +124,19 @@ func outputFileName(inputFileName string, targetFormat string) string {
 }
 
 func mimeTypeByFormat(format string) string {
-	switch format {
-	case "jpg":
+	switch canonicalFormat(format) {
+	case "jpeg":
 		return "image/jpeg"
+	case "avif":
+		return "image/avif"
+	case "gif":
+		return "image/gif"
+	case "heif":
+		return "image/heif"
 	case "png":
 		return "image/png"
+	case "tiff":
+		return "image/tiff"
 	case "webp":
 		return "image/webp"
 	default:

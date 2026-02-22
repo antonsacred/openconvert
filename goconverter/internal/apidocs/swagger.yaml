@@ -20,7 +20,7 @@ definitions:
         example: png
         type: string
       to:
-        example: jpg
+        example: jpeg
         type: string
     type: object
   server.ConvertResponse:
@@ -28,7 +28,7 @@ definitions:
       contentBase64:
         type: string
       fileName:
-        example: input.jpg
+        example: input.jpeg
         type: string
       from:
         example: png
@@ -37,7 +37,7 @@ definitions:
         example: image/jpeg
         type: string
       to:
-        example: jpg
+        example: jpeg
         type: string
     type: object
   server.ErrorDetail:
