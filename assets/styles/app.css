@@ -1,5 +1,16 @@
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
 
 @plugin "daisyui" {
-    themes: emerald --default;
+    themes: light --default;
+}
+
+body {
+    font-family: "Space Grotesk", "Segoe UI", sans-serif;
+}
+
+.oc-hero {
+    background-image:
+        radial-gradient(circle at 84% 24%, rgb(128 37 36 / 40%) 0%, transparent 42%),
+        linear-gradient(118deg, #1b1e23 0%, #272b30 52%, #1f2227 100%);
 }
