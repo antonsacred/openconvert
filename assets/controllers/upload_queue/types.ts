@@ -20,6 +20,7 @@ export type PersistedQueueItem = {
 };
 
 export type DownloadEntry = {
+    blob: Blob;
     objectUrl: string;
     fileName: string;
     mimeType: string;

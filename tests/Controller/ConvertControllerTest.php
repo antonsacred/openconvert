@@ -219,6 +219,7 @@ final class ConvertControllerTest extends WebTestCase
     {
         $this->setEnvVar('CONVERTER_API', 'http://converter-api:8081');
         $this->setEnvVar('APP_CONVERT_RATE_LIMIT', '1');
+        $clientIp = sprintf('203.0.113.%d', random_int(11, 250));
 
         $calls = 0;
         $mockClient = new MockHttpClient(static function () use (&$calls): MockResponse {
@@ -238,7 +239,7 @@ final class ConvertControllerTest extends WebTestCase
             ], [
                 'file' => $firstUploadedFile,
             ], [
-                'REMOTE_ADDR' => '203.0.113.10',
+                'REMOTE_ADDR' => $clientIp,
             ]);
             self::assertResponseIsSuccessful();
         } finally {
@@ -253,7 +254,7 @@ final class ConvertControllerTest extends WebTestCase
             ], [
                 'file' => $secondUploadedFile,
             ], [
-                'REMOTE_ADDR' => '203.0.113.10',
+                'REMOTE_ADDR' => $clientIp,
             ]);
 
             self::assertResponseStatusCodeSame(429);

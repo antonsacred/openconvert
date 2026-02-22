@@ -28,10 +28,28 @@ export function getDownload(itemId: string): DownloadEntry | undefined {
     return DOWNLOAD_STORE.get(itemId);
 }
 
+export function listDownloadsByItemIds(itemIds: string[]): Array<{ itemId: string; download: DownloadEntry }> {
+    const entries: Array<{ itemId: string; download: DownloadEntry }> = [];
+    itemIds.forEach((itemId) => {
+        const download = DOWNLOAD_STORE.get(itemId);
+        if (download === undefined) {
+            return;
+        }
+
+        entries.push({
+            itemId,
+            download,
+        });
+    });
+
+    return entries;
+}
+
 export function setDownload(itemId: string, fileName: string, mimeType: string, blob: Blob): void {
     revokeDownload(itemId);
     const objectUrl = URL.createObjectURL(blob);
     DOWNLOAD_STORE.set(itemId, {
+        blob,
         objectUrl,
         fileName,
         mimeType,

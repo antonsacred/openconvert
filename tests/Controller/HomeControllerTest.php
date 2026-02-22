@@ -60,6 +60,7 @@ final class HomeControllerTest extends WebTestCase
         self::assertCount(1, $crawler->filter('[data-upload-queue-target="fileList"]'));
         self::assertCount(1, $crawler->filter('[data-upload-queue-target="error"]'));
         self::assertGreaterThan(0, $crawler->filter('button[data-action="click->upload-queue#openFilePicker"]')->count());
+        self::assertCount(1, $crawler->filter('button[data-upload-queue-target="downloadAllButton"][data-action="click->upload-queue#downloadAll"]'));
         self::assertCount(1, $crawler->filter('button[data-upload-queue-target="convertButton"]'));
     }
 
@@ -75,12 +76,14 @@ final class HomeControllerTest extends WebTestCase
         self::assertCount(1, $sourceCrawler->filter('[data-controller="upload-queue"]'));
         self::assertCount(1, $sourceCrawler->filter('input[type="file"][data-upload-queue-target="fileInput"]'));
         self::assertCount(1, $sourceCrawler->filter('[data-upload-queue-target="fileList"]'));
+        self::assertCount(1, $sourceCrawler->filter('button[data-upload-queue-target="downloadAllButton"]'));
 
         $pairCrawler = $client->request('GET', '/png-to-jpg');
         self::assertResponseIsSuccessful();
         self::assertCount(1, $pairCrawler->filter('[data-controller="upload-queue"]'));
         self::assertCount(1, $pairCrawler->filter('input[type="file"][data-upload-queue-target="fileInput"]'));
         self::assertCount(1, $pairCrawler->filter('[data-upload-queue-target="fileList"]'));
+        self::assertCount(1, $pairCrawler->filter('button[data-upload-queue-target="downloadAllButton"]'));
     }
 
     public function testSourceConverterPageShowsWikiInfoAndTargets(): void

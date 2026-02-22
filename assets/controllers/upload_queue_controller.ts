@@ -1,5 +1,6 @@
 import { Controller } from '@hotwired/stimulus';
 import { decodeBase64ToBlob, extractErrorMessage, isConvertSuccessPayload, submitConversionRequest } from './upload_queue/api.ts';
+import { buildArchiveFileName, buildZipBlob } from './upload_queue/zip.ts';
 import {
     deleteOriginalFile,
     getDownload,
@@ -7,6 +8,7 @@ import {
     hasDownload,
     hasOriginalFile,
     hydrateDoneStateFromDownloads,
+    listDownloadsByItemIds,
     persistQueueItems,
     readPersistedQueueItems,
     revokeDownload,
@@ -18,7 +20,7 @@ import type { FormatsBySource, QueueItem } from './upload_queue/types.ts';
 import { buildItemRow } from './upload_queue/view.ts';
 
 export default class extends Controller<HTMLElement> {
-    static targets = ['fileInput', 'fileList', 'emptyState', 'queuePanel', 'error', 'errorMessage', 'convertButton'] as const;
+    static targets = ['fileInput', 'fileList', 'emptyState', 'queuePanel', 'error', 'errorMessage', 'convertButton', 'downloadAllButton'] as const;
     static values = {
         formatsBySource: Object,
         sourcePageTemplate: String,
@@ -37,6 +39,8 @@ export default class extends Controller<HTMLElement> {
     declare readonly hasErrorMessageTarget: boolean;
     declare readonly convertButtonTarget: HTMLButtonElement;
     declare readonly hasConvertButtonTarget: boolean;
+    declare readonly downloadAllButtonTarget: HTMLButtonElement;
+    declare readonly hasDownloadAllButtonTarget: boolean;
     declare readonly formatsBySourceValue: FormatsBySource;
     declare readonly sourcePageTemplateValue: string;
     declare readonly selectedFromValue: string;
@@ -46,6 +50,7 @@ export default class extends Controller<HTMLElement> {
 
     private items: QueueItem[] = [];
     private isConverting = false;
+    private isDownloadingAll = false;
 
     connect(): void {
         this.clearError();
@@ -170,7 +175,7 @@ export default class extends Controller<HTMLElement> {
     }
 
     async convertQueue(): Promise<void> {
-        if (this.isConverting) {
+        if (this.isConverting || this.isDownloadingAll) {
             return;
         }
 
@@ -237,6 +242,55 @@ export default class extends Controller<HTMLElement> {
         document.body.appendChild(link);
         link.click();
         link.remove();
+    }
+
+    async downloadAll(): Promise<void> {
+        if (this.isConverting || this.isDownloadingAll) {
+            return;
+        }
+
+        const doneItemIds = this.items
+            .filter((item) => item.status === 'DONE')
+            .map((item) => item.id);
+        if (doneItemIds.length === 0) {
+            this.showError('No converted files are available for ZIP download.');
+
+            return;
+        }
+
+        const downloadEntries = listDownloadsByItemIds(doneItemIds);
+        if (downloadEntries.length === 0) {
+            this.showError('No converted files are available for ZIP download.');
+
+            return;
+        }
+
+        this.clearError();
+        this.isDownloadingAll = true;
+        this.render();
+
+        try {
+            const zipBlob = await buildZipBlob(downloadEntries.map(({ download }) => ({
+                fileName: download.fileName,
+                blob: download.blob,
+            })));
+            const objectUrl = URL.createObjectURL(zipBlob);
+
+            const link = document.createElement('a');
+            link.href = objectUrl;
+            link.download = buildArchiveFileName(new Date());
+            link.rel = 'noopener';
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(objectUrl);
+        } catch {
+            this.showError('Failed to prepare ZIP archive. Please try again.');
+        } finally {
+            this.isDownloadingAll = false;
+            this.render();
+        }
     }
 
     private async convertSingleItem(itemId: string): Promise<void> {
@@ -318,6 +372,10 @@ export default class extends Controller<HTMLElement> {
                 this.convertButtonTarget.disabled = true;
                 this.convertButtonTarget.textContent = 'Convert';
             }
+            if (this.hasDownloadAllButtonTarget) {
+                this.downloadAllButtonTarget.disabled = true;
+                this.downloadAllButtonTarget.textContent = 'Download all';
+            }
 
             return;
         }
@@ -334,16 +392,19 @@ export default class extends Controller<HTMLElement> {
                 .filter((target) => target !== '');
 
             fragment.appendChild(buildItemRow(item, {
-                isConverting: this.isConverting,
+                isConverting: this.isConverting || this.isDownloadingAll,
                 hasDownload: hasDownload(item.id),
                 targets,
             }));
         });
         this.fileListTarget.appendChild(fragment);
 
+        const doneItemsCount = this.items.filter((item) => item.status === 'DONE' && hasDownload(item.id)).length;
+
         if (this.hasConvertButtonTarget) {
             const itemsToConvert = this.items.filter((item) => item.status !== 'DONE');
             const canConvert = !this.isConverting
+                && !this.isDownloadingAll
                 && itemsToConvert.length > 0
                 && itemsToConvert.every((item) => item.target !== '');
             this.convertButtonTarget.disabled = !canConvert;
@@ -352,6 +413,17 @@ export default class extends Controller<HTMLElement> {
                 this.convertButtonTarget.innerHTML = '<span class="loading loading-spinner loading-sm"></span>Converting...';
             } else {
                 this.convertButtonTarget.textContent = 'Convert';
+            }
+        }
+
+        if (this.hasDownloadAllButtonTarget) {
+            const canDownloadAll = !this.isConverting && !this.isDownloadingAll && doneItemsCount > 0;
+            this.downloadAllButtonTarget.disabled = !canDownloadAll;
+
+            if (this.isDownloadingAll) {
+                this.downloadAllButtonTarget.innerHTML = '<span class="loading loading-spinner loading-sm"></span>Preparing ZIP...';
+            } else {
+                this.downloadAllButtonTarget.textContent = 'Download all';
             }
         }
     }
