@@ -2,7 +2,7 @@
 
 namespace App\Controller;
 
-use App\Service\ConvertService;
+use App\Service\ConversionExecutionService;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -16,7 +16,7 @@ use Symfony\Component\Routing\Attribute\Route;
 final class ConvertController extends AbstractController
 {
     public function __construct(
-        private readonly ConvertService $convertService,
+        private readonly ConversionExecutionService $conversionExecutionService,
         #[Autowire(service: 'limiter.convert_api')]
         private readonly RateLimiterFactory $convertRateLimiter,
         #[Autowire('%env(int:APP_MAX_UPLOAD_BYTES)%')]
@@ -101,7 +101,7 @@ final class ConvertController extends AbstractController
             $fileName = 'input.'.$from;
         }
 
-        $result = $this->convertService->convert($from, $to, $fileName, base64_encode($inputBytes), $requestId);
+        $result = $this->conversionExecutionService->convert($from, $to, $fileName, base64_encode($inputBytes), $requestId);
 
         $durationMs = (int) round((microtime(true) - $requestStart) * 1000);
         $statusCode = $result->statusCode();

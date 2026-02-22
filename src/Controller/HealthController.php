@@ -2,7 +2,7 @@
 
 namespace App\Controller;
 
-use App\Service\ConvertService;
+use App\Service\ConverterHealthService;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -12,7 +12,7 @@ use Symfony\Component\Routing\Attribute\Route;
 final class HealthController extends AbstractController
 {
     public function __construct(
-        private readonly ConvertService $convertService,
+        private readonly ConverterHealthService $converterHealthService,
         private readonly LoggerInterface $logger,
     ) {
     }
@@ -21,7 +21,7 @@ final class HealthController extends AbstractController
     public function __invoke(Request $request): JsonResponse
     {
         $requestId = $this->resolveRequestId($request);
-        $result = $this->convertService->getHealthStatus();
+        $result = $this->converterHealthService->getHealthStatus();
 
         $this->logger->info('health_check', [
             'request_id' => $requestId,

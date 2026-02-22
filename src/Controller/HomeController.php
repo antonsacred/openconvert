@@ -2,7 +2,7 @@
 
 namespace App\Controller;
 
-use App\Service\ConvertService;
+use App\Service\ConversionCatalogService;
 use App\Service\FormatWikiInfoService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -20,7 +20,7 @@ final class HomeController extends AbstractController
     ];
 
     public function __construct(
-        private readonly ConvertService $convertService,
+        private readonly ConversionCatalogService $conversionCatalogService,
         private readonly FormatWikiInfoService $formatWikiInfoService,
     ) {
     }
@@ -104,7 +104,7 @@ final class HomeController extends AbstractController
     private function loadFormatsBySource(): array
     {
         try {
-            return $this->convertService->getFormats();
+            return $this->conversionCatalogService->getFormats();
         } catch (\Throwable) {
             return [];
         }
