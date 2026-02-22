@@ -16,6 +16,6 @@ import (
 // @Router /v1/conversions [get]
 func listConversionsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, ConversionsResponse{
-		PossibleConvertationFormats: converter.ConversionTargetsBySource(),
+		Formats: converter.ConversionTargetsBySource(),
 	})
 }

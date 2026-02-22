@@ -5,7 +5,7 @@ type HealthResponse struct {
 }
 
 type ConversionsResponse struct {
-	PossibleConvertationFormats map[string][]string `json:"possibleConvertationFormats"`
+	Formats map[string][]string `json:"formats"`
 }
 
 type ConvertRequest struct {

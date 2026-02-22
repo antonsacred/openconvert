@@ -51,23 +51,23 @@ func TestConversionsEndpoint(t *testing.T) {
 	}
 
 	var body struct {
-		PossibleConvertationFormats map[string][]string `json:"possibleConvertationFormats"`
+		Formats map[string][]string `json:"formats"`
 	}
 	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
 		t.Fatalf("expected JSON response, got error: %v", err)
 	}
 
-	if len(body.PossibleConvertationFormats) == 0 {
+	if len(body.Formats) == 0 {
 		t.Fatalf("expected at least one source format")
 	}
 
-	if len(body.PossibleConvertationFormats) != 3 {
-		t.Fatalf("expected 3 source formats, got %d (%v)", len(body.PossibleConvertationFormats), body.PossibleConvertationFormats)
+	if len(body.Formats) != 3 {
+		t.Fatalf("expected 3 source formats, got %d (%v)", len(body.Formats), body.Formats)
 	}
 
-	targets, ok := body.PossibleConvertationFormats["png"]
+	targets, ok := body.Formats["png"]
 	if !ok {
-		t.Fatalf("expected key \"png\" in response, got %v", body.PossibleConvertationFormats)
+		t.Fatalf("expected key \"png\" in response, got %v", body.Formats)
 	}
 
 	if len(targets) != 2 {
