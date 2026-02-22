@@ -19,6 +19,12 @@ services:
       # - ./docker/db/data:/var/lib/postgresql/data:rw
 ###< doctrine/doctrine-bundle ###
 
+  app:
+    image: serversideup/php:8.5-fpm-nginx
+    volumes:
+      - .:/var/www/html
+    ports:
+      - "8080:8080"
 volumes:
 ###> doctrine/doctrine-bundle ###
   database_data:
