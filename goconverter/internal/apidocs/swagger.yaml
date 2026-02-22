@@ -1,0 +1,60 @@
+basePath: /
+definitions:
+  server.ConversionsResponse:
+    properties:
+      output:
+        items:
+          items:
+            type: string
+          type: array
+        type: array
+    type: object
+  server.HealthResponse:
+    properties:
+      status:
+        example: ok
+        type: string
+    type: object
+info:
+  contact: {}
+  description: API for discovering available file conversions.
+  title: GoConverter API
+  version: "1.0"
+paths:
+  /conversions:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/server.ConversionsResponse'
+      summary: List supported conversions
+      tags:
+      - conversions
+  /health:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/server.HealthResponse'
+      summary: Health check
+      tags:
+      - health
+  /openapi.json:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OpenAPI JSON
+          schema:
+            type: string
+      summary: OpenAPI spec
+      tags:
+      - docs
+swagger: "2.0"

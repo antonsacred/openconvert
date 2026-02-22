@@ -1,0 +1,94 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "API for discovering available file conversions.",
+        "title": "GoConverter API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "basePath": "/",
+    "paths": {
+        "/conversions": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "conversions"
+                ],
+                "summary": "List supported conversions",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/server.ConversionsResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/health": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "Health check",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/server.HealthResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/openapi.json": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "docs"
+                ],
+                "summary": "OpenAPI spec",
+                "responses": {
+                    "200": {
+                        "description": "OpenAPI JSON",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "server.ConversionsResponse": {
+            "type": "object",
+            "properties": {
+                "output": {
+                    "type": "array",
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "server.HealthResponse": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "string",
+                    "example": "ok"
+                }
+            }
+        }
+    }
+}
