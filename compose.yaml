@@ -38,6 +38,13 @@ services:
       app:
         condition: service_started
 
+  tailwind-worker:
+    <<: *php-base
+    command: sh -c "php bin/console tailwind:build --watch"
+    depends_on:
+      app:
+        condition: service_started
+
 volumes:
 ###> doctrine/doctrine-bundle ###
   database_data:
