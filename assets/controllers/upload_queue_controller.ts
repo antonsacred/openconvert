@@ -1,36 +1,21 @@
 import { Controller } from '@hotwired/stimulus';
-
-type FormatsBySource = Record<string, string[]>;
-type QueueItemStatus = 'READY' | 'PROCESSING' | 'DONE' | 'ERROR';
-type QueueItem = {
-    id: string;
-    fileName: string;
-    source: string;
-    target: string;
-    status: QueueItemStatus;
-    errorMessage: string;
-    outputFileName: string;
-};
-type PersistedQueueItem = {
-    id: string;
-    fileName: string;
-    source: string;
-    target: string;
-};
-type DownloadEntry = {
-    objectUrl: string;
-    fileName: string;
-    mimeType: string;
-};
-type ConvertSuccessPayload = {
-    fileName: string;
-    mimeType: string;
-    contentBase64: string;
-};
-
-const UPLOAD_QUEUE_STORAGE_KEY = 'openconvert.upload_queue_state';
-const ORIGINAL_FILE_STORE = new Map<string, File>();
-const DOWNLOAD_STORE = new Map<string, DownloadEntry>();
+import { decodeBase64ToBlob, extractErrorMessage, isConvertSuccessPayload, submitConversionRequest } from './upload_queue/api.ts';
+import {
+    deleteOriginalFile,
+    getDownload,
+    getOriginalFile,
+    hasDownload,
+    hasOriginalFile,
+    hydrateDoneStateFromDownloads,
+    persistQueueItems,
+    readPersistedQueueItems,
+    revokeDownload,
+    setDownload,
+    setOriginalFile,
+    syncTransientStoresWithItems,
+} from './upload_queue/storage.ts';
+import type { FormatsBySource, QueueItem } from './upload_queue/types.ts';
+import { buildItemRow } from './upload_queue/view.ts';
 
 export default class extends Controller<HTMLElement> {
     static targets = ['fileInput', 'fileList', 'emptyState', 'queuePanel', 'error', 'errorMessage', 'convertButton'] as const;
@@ -64,11 +49,11 @@ export default class extends Controller<HTMLElement> {
 
     connect(): void {
         this.clearError();
-        this.items = this.loadPersistedItems();
+        this.items = readPersistedQueueItems();
         this.pruneItemsWithoutSourceData();
         this.reconcileItemsWithCurrentSelection();
-        this.hydrateDoneStateFromDownloadStore();
-        this.syncTransientStoresWithItems();
+        this.items = hydrateDoneStateFromDownloads(this.items);
+        syncTransientStoresWithItems(this.items);
         this.render();
     }
 
@@ -118,7 +103,7 @@ export default class extends Controller<HTMLElement> {
             const defaultTarget = this.resolvePreferredTarget(supportedFile.source, pageTarget);
             const queueItem = this.createQueueItem(supportedFile.fileName, supportedFile.source, defaultTarget);
             queueItemsToAdd.push(queueItem);
-            ORIGINAL_FILE_STORE.set(queueItem.id, supportedFile.file);
+            setOriginalFile(queueItem.id, supportedFile.file);
         });
 
         this.items = [...this.items, ...queueItemsToAdd];
@@ -178,7 +163,7 @@ export default class extends Controller<HTMLElement> {
             errorMessage: '',
             outputFileName: '',
         };
-        this.revokeDownload(item.id);
+        revokeDownload(item.id);
 
         this.persistItems();
         this.render();
@@ -239,7 +224,7 @@ export default class extends Controller<HTMLElement> {
             return;
         }
 
-        const download = DOWNLOAD_STORE.get(itemId);
+        const download = getDownload(itemId);
         if (download === undefined) {
             return;
         }
@@ -267,7 +252,7 @@ export default class extends Controller<HTMLElement> {
             return;
         }
 
-        const sourceFile = ORIGINAL_FILE_STORE.get(itemId);
+        const sourceFile = getOriginalFile(itemId);
         if (sourceFile === undefined) {
             this.removeQueueItem(itemId);
 
@@ -280,44 +265,31 @@ export default class extends Controller<HTMLElement> {
             errorMessage: '',
             outputFileName: '',
         };
-        this.revokeDownload(itemId);
+        revokeDownload(itemId);
         this.render();
 
         try {
-            const formData = new FormData();
-            formData.append('from', item.source);
-            formData.append('to', item.target);
-            formData.append('file', sourceFile, item.fileName);
-
-            const response = await fetch(this.convertUrlValue, {
-                method: 'POST',
-                headers: {
-                    Accept: 'application/json',
-                },
-                body: formData,
+            const response = await submitConversionRequest(this.convertUrlValue, {
+                from: item.source,
+                to: item.target,
+                fileName: item.fileName,
+                file: sourceFile,
             });
 
-            let payload: unknown = null;
-            try {
-                payload = await response.json();
-            } catch {
-                payload = null;
-            }
-
             if (!response.ok) {
-                this.setItemError(itemId, this.extractErrorMessage(payload, `Failed to convert ${item.fileName}.`));
+                this.setItemError(itemId, extractErrorMessage(response.payload, `Failed to convert ${item.fileName}.`));
 
                 return;
             }
 
-            if (!this.isConvertSuccessPayload(payload)) {
+            if (!isConvertSuccessPayload(response.payload)) {
                 this.setItemError(itemId, `Invalid conversion response for ${item.fileName}.`);
 
                 return;
             }
 
-            const outputBlob = this.decodeBase64ToBlob(payload.contentBase64, payload.mimeType);
-            this.setDownload(itemId, payload.fileName, payload.mimeType, outputBlob);
+            const outputBlob = decodeBase64ToBlob(response.payload.contentBase64, response.payload.mimeType);
+            setDownload(itemId, response.payload.fileName, response.payload.mimeType, outputBlob);
 
             const doneIndex = this.items.findIndex((queueItem) => queueItem.id === itemId);
             if (doneIndex >= 0) {
@@ -325,7 +297,7 @@ export default class extends Controller<HTMLElement> {
                     ...this.items[doneIndex],
                     status: 'DONE',
                     errorMessage: '',
-                    outputFileName: payload.fileName,
+                    outputFileName: response.payload.fileName,
                 };
             }
             this.render();
@@ -357,7 +329,15 @@ export default class extends Controller<HTMLElement> {
 
         const fragment = document.createDocumentFragment();
         this.items.forEach((item) => {
-            fragment.appendChild(this.buildItemRow(item));
+            const targets = this.resolveTargetsForSource(item.source)
+                .map((target) => this.normalizeFormat(target))
+                .filter((target) => target !== '');
+
+            fragment.appendChild(buildItemRow(item, {
+                isConverting: this.isConverting,
+                hasDownload: hasDownload(item.id),
+                targets,
+            }));
         });
         this.fileListTarget.appendChild(fragment);
 
@@ -374,115 +354,6 @@ export default class extends Controller<HTMLElement> {
                 this.convertButtonTarget.textContent = 'Convert';
             }
         }
-    }
-
-    private buildItemRow(item: QueueItem): HTMLLIElement {
-        const row = document.createElement('li');
-        row.className = 'flex flex-wrap items-center gap-4 p-4 md:flex-nowrap';
-
-        const fileInfo = document.createElement('div');
-        fileInfo.className = 'min-w-0 flex-1';
-        const fileName = document.createElement('p');
-        fileName.className = 'truncate text-lg font-medium';
-        fileName.textContent = item.fileName;
-        const sourceLabel = document.createElement('p');
-        sourceLabel.className = 'text-sm text-base-content/60';
-        sourceLabel.textContent = `Source: ${item.source.toUpperCase()}`;
-        fileInfo.append(fileName, sourceLabel);
-
-        if (item.errorMessage !== '') {
-            const errorLabel = document.createElement('p');
-            errorLabel.className = 'mt-1 text-sm text-error';
-            errorLabel.textContent = item.errorMessage;
-            fileInfo.append(errorLabel);
-        } else if (item.status === 'DONE' && item.outputFileName !== '') {
-            const doneLabel = document.createElement('p');
-            doneLabel.className = 'mt-1 text-sm text-success';
-            doneLabel.textContent = `Output: ${item.outputFileName}`;
-            fileInfo.append(doneLabel);
-        }
-
-        const controls = document.createElement('div');
-        controls.className = 'flex shrink-0 items-center gap-2 whitespace-nowrap';
-
-        const statusBadge = this.buildStatusBadge(item.status);
-
-        const label = document.createElement('span');
-        label.className = 'text-sm text-base-content/70';
-        label.textContent = 'Convert to';
-
-        const targetSelect = document.createElement('select');
-        targetSelect.className = 'select select-bordered select-sm min-w-28';
-        targetSelect.dataset.itemId = item.id;
-        targetSelect.setAttribute('data-action', 'change->upload-queue#onRowTargetChange');
-        targetSelect.disabled = this.isConverting || item.status === 'PROCESSING';
-        targetSelect.add(new Option('to', '', item.target === ''));
-        this.resolveTargetsForSource(item.source).forEach((target) => {
-            const normalizedTarget = this.normalizeFormat(target);
-            if (normalizedTarget === '') {
-                return;
-            }
-
-            targetSelect.add(new Option(normalizedTarget.toUpperCase(), normalizedTarget, false, normalizedTarget === item.target));
-        });
-
-        const removeButton = document.createElement('button');
-        removeButton.type = 'button';
-        removeButton.className = 'btn btn-ghost btn-sm text-error';
-        removeButton.dataset.itemId = item.id;
-        removeButton.disabled = this.isConverting || item.status === 'PROCESSING';
-        removeButton.setAttribute('data-action', 'click->upload-queue#removeFile');
-        removeButton.textContent = 'X';
-
-        controls.append(statusBadge, label, targetSelect);
-
-        if (item.status === 'DONE' && DOWNLOAD_STORE.has(item.id)) {
-            const downloadButton = document.createElement('button');
-            downloadButton.type = 'button';
-            downloadButton.className = 'btn btn-primary btn-sm';
-            downloadButton.dataset.itemId = item.id;
-            downloadButton.setAttribute('data-action', 'click->upload-queue#downloadFile');
-            downloadButton.textContent = 'Download';
-            controls.append(downloadButton);
-        }
-
-        controls.append(removeButton);
-        row.append(fileInfo, controls);
-
-        return row;
-    }
-
-    private buildStatusBadge(status: QueueItemStatus): HTMLSpanElement {
-        const badge = document.createElement('span');
-        badge.classList.add('badge', 'badge-sm');
-
-        if (status === 'PROCESSING') {
-            badge.classList.add('badge-info', 'gap-1');
-            const spinner = document.createElement('span');
-            spinner.className = 'loading loading-spinner loading-xs';
-            badge.append(spinner, document.createTextNode('PROCESSING'));
-
-            return badge;
-        }
-
-        if (status === 'DONE') {
-            badge.classList.add('badge-success');
-            badge.textContent = 'DONE';
-
-            return badge;
-        }
-
-        if (status === 'ERROR') {
-            badge.classList.add('badge-error');
-            badge.textContent = 'ERROR';
-
-            return badge;
-        }
-
-        badge.classList.add('badge-ghost');
-        badge.textContent = 'READY';
-
-        return badge;
     }
 
     private createQueueItem(fileName: string, source: string, target: string): QueueItem {
@@ -594,171 +465,30 @@ export default class extends Controller<HTMLElement> {
         }
     }
 
-    private hydrateDoneStateFromDownloadStore(): void {
-        this.items = this.items.map((item) => {
-            const download = DOWNLOAD_STORE.get(item.id);
-            if (download === undefined) {
-                return item;
-            }
-
-            return {
-                ...item,
-                status: 'DONE',
-                errorMessage: '',
-                outputFileName: download.fileName,
-            };
-        });
-    }
-
-    private syncTransientStoresWithItems(): void {
-        const activeItemIds = new Set(this.items.map((item) => item.id));
-
-        Array.from(ORIGINAL_FILE_STORE.keys()).forEach((itemId) => {
-            if (!activeItemIds.has(itemId)) {
-                ORIGINAL_FILE_STORE.delete(itemId);
-            }
-        });
-
-        Array.from(DOWNLOAD_STORE.entries()).forEach(([itemId, download]) => {
-            if (!activeItemIds.has(itemId)) {
-                URL.revokeObjectURL(download.objectUrl);
-                DOWNLOAD_STORE.delete(itemId);
-            }
-        });
-    }
-
     private pruneItemsWithoutSourceData(): number {
         if (this.items.length === 0) {
             return 0;
         }
 
         const removedItemIds = this.items
-            .filter((item) => !ORIGINAL_FILE_STORE.has(item.id))
+            .filter((item) => !hasOriginalFile(item.id))
             .map((item) => item.id);
 
         if (removedItemIds.length === 0) {
             return 0;
         }
 
-        this.items = this.items.filter((item) => ORIGINAL_FILE_STORE.has(item.id));
+        this.items = this.items.filter((item) => hasOriginalFile(item.id));
         removedItemIds.forEach((itemId) => {
-            this.revokeDownload(itemId);
+            revokeDownload(itemId);
         });
         this.persistItems();
 
         return removedItemIds.length;
     }
 
-    private loadPersistedItems(): QueueItem[] {
-        const rawState = this.readPersistedState();
-        if (rawState === null || rawState === '') {
-            return [];
-        }
-
-        let decodedState: unknown = null;
-        try {
-            decodedState = JSON.parse(rawState);
-        } catch {
-            this.clearPersistedState();
-
-            return [];
-        }
-
-        if (!Array.isArray(decodedState)) {
-            this.clearPersistedState();
-
-            return [];
-        }
-
-        const parsedItems: QueueItem[] = [];
-        decodedState.forEach((value) => {
-            if (!this.isPersistedQueueItem(value)) {
-                return;
-            }
-
-            parsedItems.push({
-                id: value.id,
-                fileName: value.fileName,
-                source: value.source,
-                target: value.target,
-                status: 'READY',
-                errorMessage: '',
-                outputFileName: '',
-            });
-        });
-
-        return parsedItems;
-    }
-
     private persistItems(): void {
-        if (this.items.length === 0) {
-            this.clearPersistedState();
-
-            return;
-        }
-
-        const persistedItems: PersistedQueueItem[] = this.items.map((item) => ({
-            id: item.id,
-            fileName: item.fileName,
-            source: item.source,
-            target: item.target,
-        }));
-
-        try {
-            window.sessionStorage.setItem(UPLOAD_QUEUE_STORAGE_KEY, JSON.stringify(persistedItems));
-        } catch {
-            try {
-                window.localStorage.setItem(UPLOAD_QUEUE_STORAGE_KEY, JSON.stringify(persistedItems));
-            } catch {
-            }
-        }
-    }
-
-    private readPersistedState(): string | null {
-        try {
-            const sessionState = window.sessionStorage.getItem(UPLOAD_QUEUE_STORAGE_KEY);
-            if (sessionState !== null && sessionState !== '') {
-                return sessionState;
-            }
-        } catch {
-        }
-
-        try {
-            const localState = window.localStorage.getItem(UPLOAD_QUEUE_STORAGE_KEY);
-            if (localState !== null && localState !== '') {
-                return localState;
-            }
-        } catch {
-        }
-
-        return null;
-    }
-
-    private clearPersistedState(): void {
-        try {
-            window.sessionStorage.removeItem(UPLOAD_QUEUE_STORAGE_KEY);
-        } catch {
-        }
-        try {
-            window.localStorage.removeItem(UPLOAD_QUEUE_STORAGE_KEY);
-        } catch {
-        }
-    }
-
-    private isPersistedQueueItem(value: unknown): value is PersistedQueueItem {
-        if (typeof value !== 'object' || value === null) {
-            return false;
-        }
-
-        const candidate = value as Record<string, unknown>;
-
-        return typeof candidate.id === 'string'
-            && candidate.id.trim() !== ''
-            && typeof candidate.fileName === 'string'
-            && candidate.fileName.trim() !== ''
-            && typeof candidate.source === 'string'
-            && candidate.source.trim() !== ''
-            && typeof candidate.target === 'string';
+        persistQueueItems(this.items);
     }
 
     private showError(message: string): void {
@@ -799,7 +529,7 @@ export default class extends Controller<HTMLElement> {
             errorMessage: message,
             outputFileName: '',
         };
-        this.revokeDownload(itemId);
+        revokeDownload(itemId);
         this.render();
     }
 
@@ -810,73 +540,10 @@ export default class extends Controller<HTMLElement> {
         }
 
         this.items = nextItems;
-        ORIGINAL_FILE_STORE.delete(itemId);
-        this.revokeDownload(itemId);
+        deleteOriginalFile(itemId);
+        revokeDownload(itemId);
         this.persistItems();
         this.render();
-    }
-
-    private setDownload(itemId: string, fileName: string, mimeType: string, blob: Blob): void {
-        this.revokeDownload(itemId);
-        const objectUrl = URL.createObjectURL(blob);
-        DOWNLOAD_STORE.set(itemId, {
-            objectUrl,
-            fileName,
-            mimeType,
-        });
-    }
-
-    private revokeDownload(itemId: string): void {
-        const download = DOWNLOAD_STORE.get(itemId);
-        if (download === undefined) {
-            return;
-        }
-
-        URL.revokeObjectURL(download.objectUrl);
-        DOWNLOAD_STORE.delete(itemId);
-    }
-
-    private extractErrorMessage(payload: unknown, fallback: string): string {
-        if (typeof payload === 'object' && payload !== null) {
-            const objectPayload = payload as Record<string, unknown>;
-            if (typeof objectPayload.message === 'string' && objectPayload.message.trim() !== '') {
-                return objectPayload.message.trim();
-            }
-
-            if (typeof objectPayload.error === 'object' && objectPayload.error !== null) {
-                const errorPayload = objectPayload.error as Record<string, unknown>;
-                if (typeof errorPayload.message === 'string' && errorPayload.message.trim() !== '') {
-                    return errorPayload.message.trim();
-                }
-            }
-        }
-
-        return fallback;
-    }
-
-    private isConvertSuccessPayload(payload: unknown): payload is ConvertSuccessPayload {
-        if (typeof payload !== 'object' || payload === null) {
-            return false;
-        }
-
-        const objectPayload = payload as Record<string, unknown>;
-
-        return typeof objectPayload.fileName === 'string'
-            && objectPayload.fileName.trim() !== ''
-            && typeof objectPayload.mimeType === 'string'
-            && objectPayload.mimeType.trim() !== ''
-            && typeof objectPayload.contentBase64 === 'string'
-            && objectPayload.contentBase64.trim() !== '';
-    }
-
-    private decodeBase64ToBlob(contentBase64: string, mimeType: string): Blob {
-        const binary = window.atob(contentBase64);
-        const bytes = new Uint8Array(binary.length);
-        for (let i = 0; i < binary.length; i += 1) {
-            bytes[i] = binary.charCodeAt(i);
-        }
-
-        return new Blob([bytes], { type: mimeType });
     }
 
     private buildUnsupportedFilesMessage(unsupportedFiles: string[]): string {
