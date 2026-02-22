@@ -6,12 +6,18 @@ export default class extends Controller<HTMLFormElement> {
     static targets = ['fromSelect', 'toSelect'] as const;
     static values = {
         formatsBySource: Object,
+        homePageUrl: String,
+        sourcePageTemplate: String,
+        pairPageTemplate: String,
         selectedTo: String,
     } as const;
 
     declare readonly fromSelectTarget: HTMLSelectElement;
     declare readonly toSelectTarget: HTMLSelectElement;
     declare readonly formatsBySourceValue: FormatsBySource;
+    declare readonly homePageUrlValue: string;
+    declare readonly sourcePageTemplateValue: string;
+    declare readonly pairPageTemplateValue: string;
     declare readonly selectedToValue: string;
     declare readonly hasSelectedToValue: boolean;
 
@@ -21,7 +27,47 @@ export default class extends Controller<HTMLFormElement> {
     }
 
     onFromChange(): void {
-        this.rebuildTargetOptions('');
+        const preferredTarget = this.normalizeFormat(this.toSelectTarget.value);
+        this.rebuildTargetOptions(preferredTarget);
+
+        const source = this.normalizeFormat(this.fromSelectTarget.value);
+        if (source === '') {
+            this.visit(this.homePageUrlValue);
+
+            return;
+        }
+
+        const target = this.normalizeFormat(this.toSelectTarget.value);
+        if (target !== '') {
+            this.visit(this.buildPairPageUrl(source, target));
+
+            return;
+        }
+
+        this.visit(this.buildSourcePageUrl(source));
+    }
+
+    onToChange(): void {
+        const source = this.normalizeFormat(this.fromSelectTarget.value);
+        const target = this.normalizeFormat(this.toSelectTarget.value);
+        if (source === '') {
+            this.visit(this.homePageUrlValue);
+
+            return;
+        }
+
+        if (target === '') {
+            this.visit(this.buildSourcePageUrl(source));
+
+            return;
+        }
+
+        const targets = this.resolveTargetsForSource(source).map((item) => this.normalizeFormat(item));
+        if (!targets.includes(target)) {
+            return;
+        }
+
+        this.visit(this.buildPairPageUrl(source, target));
     }
 
     rebuildTargetOptions(preferredTarget: string): void {
@@ -74,5 +120,26 @@ export default class extends Controller<HTMLFormElement> {
 
     normalizeFormat(value: unknown): string {
         return String(value ?? '').trim().toLowerCase();
+    }
+
+    private buildSourcePageUrl(source: string): string {
+        return this.sourcePageTemplateValue.replace('sourceplaceholder', encodeURIComponent(source));
+    }
+
+    private buildPairPageUrl(source: string, target: string): string {
+        return this.pairPageTemplateValue
+            .replace('sourceplaceholder', encodeURIComponent(source))
+            .replace('targetplaceholder', encodeURIComponent(target));
+    }
+
+    private visit(path: string): void {
+        const turbo = (window as Window & { Turbo?: { visit: (location: string) => void } }).Turbo;
+        if (turbo !== undefined) {
+            turbo.visit(path);
+
+            return;
+        }
+
+        window.location.assign(path);
     }
 }

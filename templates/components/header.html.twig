@@ -1,0 +1,37 @@
+<div class="navbar mx-auto max-w-6xl px-4 py-3">
+    <div class="navbar-start">
+        <a href="{{ path('app_home') }}" class="btn btn-ghost gap-3 px-1 text-xl font-semibold normal-case">
+            <span class="rounded-box bg-white/90 p-2 text-neutral shadow-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" class="size-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M19.5 9.5a3.5 3.5 0 0 0-3.3 2.35A4.5 4.5 0 0 0 7.2 11a3.75 3.75 0 0 0 .3 7.48h11a4 4 0 0 0 1-7.98Z"/>
+                </svg>
+            </span>
+            <span>openconvert</span>
+        </a>
+    </div>
+    <div class="navbar-center hidden lg:flex">
+        <ul class="menu menu-horizontal gap-1 px-1">
+            <li><a href="#">Tools</a></li>
+            <li><a href="#">API</a></li>
+            <li><a href="#">Pricing</a></li>
+        </ul>
+    </div>
+    <div class="navbar-end gap-2">
+        <div class="dropdown dropdown-end lg:hidden">
+            <div tabindex="0" role="button" class="btn btn-ghost btn-square">
+                <svg xmlns="http://www.w3.org/2000/svg" class="size-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/>
+                </svg>
+            </div>
+            <ul tabindex="0" class="menu dropdown-content z-10 mt-3 w-44 rounded-box bg-base-100 p-2 text-base-content shadow">
+                <li><a href="#">Tools</a></li>
+                <li><a href="#">API</a></li>
+                <li><a href="#">Pricing</a></li>
+                <li><a href="#">Sign Up</a></li>
+                <li><a href="#">Login</a></li>
+            </ul>
+        </div>
+        <a href="#" class="btn btn-ghost btn-sm hidden lg:inline-flex">Sign Up</a>
+        <a href="#" class="btn btn-ghost btn-sm hidden lg:inline-flex">Login</a>
+    </div>
+</div>

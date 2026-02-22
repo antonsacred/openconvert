@@ -1,0 +1,74 @@
+<section class="mx-auto max-w-6xl px-4 py-20">
+    {% if page_mode == 'source' %}
+        <div class="mb-10 space-y-3 text-center">
+            <div class="badge badge-outline">Convert {{ selected_from|upper }}</div>
+            <h2 class="text-3xl font-bold md:text-4xl">About {{ selected_from|upper }} and where it can go next</h2>
+            <p class="mx-auto max-w-2xl text-base-content/70">
+                Explore format background and jump directly to supported conversion targets.
+            </p>
+        </div>
+
+        <div class="grid gap-6 md:grid-cols-2">
+            <article class="card bg-base-100 shadow-md">
+                <div class="card-body gap-4">
+                    <h3 class="card-title">{{ source_wiki_info.title }}</h3>
+                    <p>{{ source_wiki_info.summary }}</p>
+                    <div class="card-actions justify-end">
+                        <a href="{{ source_wiki_info.url }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">
+                            Read on Wikipedia
+                        </a>
+                    </div>
+                </div>
+            </article>
+
+            <article class="card bg-base-100 shadow-md">
+                <div class="card-body gap-4">
+                    <h3 class="card-title">Convert {{ selected_from|upper }} to</h3>
+                    <div class="flex flex-wrap gap-2">
+                        {% for target in available_targets %}
+                            <a href="{{ path('app_pair_converter', { source: selected_from, target: target }) }}" class="btn btn-sm btn-outline">
+                                {{ target|upper }}
+                            </a>
+                        {% else %}
+                            <p>No target formats are currently available.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </article>
+        </div>
+    {% else %}
+        <div class="mb-10 space-y-3 text-center">
+            <div class="badge badge-outline">Convert {{ selected_from|upper }} to {{ selected_to|upper }}</div>
+            <h2 class="text-3xl font-bold md:text-4xl">{{ selected_from|upper }} and {{ selected_to|upper }} format details</h2>
+            <p class="mx-auto max-w-2xl text-base-content/70">
+                Quick context from wiki-style summaries before you run your conversion.
+            </p>
+        </div>
+
+        <div class="grid gap-6 md:grid-cols-2">
+            <article class="card bg-base-100 shadow-md">
+                <div class="card-body gap-4">
+                    <h3 class="card-title">{{ source_wiki_info.title }}</h3>
+                    <p>{{ source_wiki_info.summary }}</p>
+                    <div class="card-actions justify-end">
+                        <a href="{{ source_wiki_info.url }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">
+                            Read on Wikipedia
+                        </a>
+                    </div>
+                </div>
+            </article>
+
+            <article class="card bg-base-100 shadow-md">
+                <div class="card-body gap-4">
+                    <h3 class="card-title">{{ target_wiki_info.title }}</h3>
+                    <p>{{ target_wiki_info.summary }}</p>
+                    <div class="card-actions justify-end">
+                        <a href="{{ target_wiki_info.url }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">
+                            Read on Wikipedia
+                        </a>
+                    </div>
+                </div>
+            </article>
+        </div>
+    {% endif %}
+</section>

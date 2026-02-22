@@ -42,47 +42,81 @@ final class HomeControllerTest extends WebTestCase
         parent::tearDown();
     }
 
-    public function testHomeUsesConverterFormatsAndKeepsTargetDisabledWithoutSource(): void
+    public function testHomePageShowsLandingState(): void
     {
         $this->setConverterApi('http://converter-api:8081');
 
-        $mockHttpClient = new MockHttpClient([
-            new MockResponse('{"formats":{"jpg":["png"],"png":["jpg","webp"]}}', ['http_code' => 200]),
-        ]);
-
         $client = static::createClient();
-        static::getContainer()->set(HttpClientInterface::class, $mockHttpClient);
+        static::getContainer()->set(HttpClientInterface::class, $this->createMockHttpClient());
         $crawler = $client->request('GET', '/');
 
         self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('h1', 'File Converter');
         self::assertGreaterThan(0, $crawler->filter('select[name="from"] option[value="png"]')->count());
-        self::assertGreaterThan(0, $crawler->filter('select[name="from"] option[value="jpg"]')->count());
-
-        $toSelect = $crawler->filter('select[name="to"]');
-        self::assertCount(1, $toSelect);
-        self::assertNotNull($toSelect->attr('disabled'));
+        self::assertNotNull($crawler->filter('select[name="to"]')->attr('disabled'));
     }
 
-    public function testHomeShowsTargetsForSelectedSource(): void
+    public function testSourceConverterPageShowsWikiInfoAndTargets(): void
     {
         $this->setConverterApi('http://converter-api:8081');
 
-        $mockHttpClient = new MockHttpClient([
-            new MockResponse('{"formats":{"jpg":["png"],"png":["jpg","webp"]}}', ['http_code' => 200]),
-        ]);
-
         $client = static::createClient();
-        static::getContainer()->set(HttpClientInterface::class, $mockHttpClient);
-        $crawler = $client->request('GET', '/?from=png&to=webp');
+        static::getContainer()->set(HttpClientInterface::class, $this->createMockHttpClient());
+        $crawler = $client->request('GET', '/png-converter');
 
         self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('h1', 'PNG Converter');
+        self::assertStringContainsString('Portable Network Graphics', $client->getResponse()->getContent());
+        self::assertGreaterThan(0, $crawler->filter('a[href="/png-to-jpg"]')->count());
+        self::assertGreaterThan(0, $crawler->filter('a[href="/png-to-webp"]')->count());
+    }
 
-        $toSelect = $crawler->filter('select[name="to"]');
-        self::assertCount(1, $toSelect);
-        self::assertNull($toSelect->attr('disabled'));
-        self::assertGreaterThan(0, $crawler->filter('select[name="to"] option[value="jpg"]')->count());
-        self::assertGreaterThan(0, $crawler->filter('select[name="to"] option[value="webp"]')->count());
-        self::assertGreaterThan(0, $crawler->filter('select[name="to"] option[value="webp"][selected]')->count());
+    public function testPairConverterPageShowsBothFormatInfos(): void
+    {
+        $this->setConverterApi('http://converter-api:8081');
+
+        $client = static::createClient();
+        static::getContainer()->set(HttpClientInterface::class, $this->createMockHttpClient());
+        $client->request('GET', '/png-to-jpg');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('h1', 'PNG to JPG Converter');
+        self::assertStringContainsString('Portable Network Graphics', $client->getResponse()->getContent());
+        self::assertStringContainsString('JPEG', $client->getResponse()->getContent());
+    }
+
+    public function testInvalidSourceReturnsNotFound(): void
+    {
+        $this->setConverterApi('http://converter-api:8081');
+
+        $client = static::createClient();
+        static::getContainer()->set(HttpClientInterface::class, $this->createMockHttpClient());
+        $client->request('GET', '/docx-converter');
+
+        self::assertResponseStatusCodeSame(404);
+    }
+
+    private function createMockHttpClient(): MockHttpClient
+    {
+        return new MockHttpClient(static function (string $method, string $url): MockResponse {
+            if (str_contains($url, '/v1/conversions')) {
+                return new MockResponse('{"formats":{"jpg":["png"],"png":["jpg","webp"]}}', ['http_code' => 200]);
+            }
+
+            if (str_contains($url, '/page/summary/Portable_Network_Graphics')) {
+                return new MockResponse('{"title":"Portable Network Graphics","extract":"PNG is a raster graphics file format.","content_urls":{"desktop":{"page":"https://en.wikipedia.org/wiki/Portable_Network_Graphics"}}}', ['http_code' => 200]);
+            }
+
+            if (str_contains($url, '/page/summary/JPEG')) {
+                return new MockResponse('{"title":"JPEG","extract":"JPEG is a commonly used method of lossy compression for digital images.","content_urls":{"desktop":{"page":"https://en.wikipedia.org/wiki/JPEG"}}}', ['http_code' => 200]);
+            }
+
+            if (str_contains($url, '/page/summary/WebP')) {
+                return new MockResponse('{"title":"WebP","extract":"WebP is an image format employing both lossy and lossless compression.","content_urls":{"desktop":{"page":"https://en.wikipedia.org/wiki/WebP"}}}', ['http_code' => 200]);
+            }
+
+            return new MockResponse('{}', ['http_code' => 404]);
+        });
     }
 
     private function setConverterApi(?string $value): void

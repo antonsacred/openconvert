@@ -1,55 +1,18 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}OpenConvert | Fast file conversion{% endblock %}
+{% block title %}{{ page_title }} | OpenConvert{% endblock %}
 
 {% block body %}
     <div class="bg-base-200">
         <section class="oc-hero text-neutral-content">
-            <div class="navbar mx-auto max-w-6xl px-4 py-3">
-                <div class="navbar-start">
-                    <a href="{{ path('app_home') }}" class="btn btn-ghost gap-3 px-1 text-xl font-semibold normal-case">
-                        <span class="rounded-box bg-white/90 p-2 text-neutral shadow-sm">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="size-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                                <path d="M19.5 9.5a3.5 3.5 0 0 0-3.3 2.35A4.5 4.5 0 0 0 7.2 11a3.75 3.75 0 0 0 .3 7.48h11a4 4 0 0 0 1-7.98Z"/>
-                            </svg>
-                        </span>
-                        <span>openconvert</span>
-                    </a>
-                </div>
-                <div class="navbar-center hidden lg:flex">
-                    <ul class="menu menu-horizontal gap-1 px-1">
-                        <li><a href="#">Tools</a></li>
-                        <li><a href="#">API</a></li>
-                        <li><a href="#">Pricing</a></li>
-                    </ul>
-                </div>
-                <div class="navbar-end gap-2">
-                    <div class="dropdown dropdown-end lg:hidden">
-                        <div tabindex="0" role="button" class="btn btn-ghost btn-square">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="size-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/>
-                            </svg>
-                        </div>
-                        <ul tabindex="0" class="menu dropdown-content z-10 mt-3 w-44 rounded-box bg-base-100 p-2 text-base-content shadow">
-                            <li><a href="#">Tools</a></li>
-                            <li><a href="#">API</a></li>
-                            <li><a href="#">Pricing</a></li>
-                            <li><a href="#">Sign Up</a></li>
-                            <li><a href="#">Login</a></li>
-                        </ul>
-                    </div>
-                    <a href="#" class="btn btn-ghost btn-sm hidden lg:inline-flex">Sign Up</a>
-                    <a href="#" class="btn btn-ghost btn-sm hidden lg:inline-flex">Login</a>
-                </div>
-            </div>
+            {% include 'components/header.html.twig' %}
 
             <div class="mx-auto max-w-6xl px-4 pb-24 pt-14 md:pb-28">
                 <div class="grid gap-10 lg:grid-cols-2 lg:items-center">
                     <div class="space-y-5">
-                        <h1 class="text-4xl font-bold md:text-5xl">File Converter</h1>
+                        <h1 class="text-4xl font-bold md:text-5xl">{{ hero_title }}</h1>
                         <p class="max-w-xl text-lg/8 text-neutral-content/90">
-                            OpenConvert is an online file converter. Convert audio, video, documents, images, archives,
-                            ebooks, spreadsheets and more with one streamlined workflow.
+                            {{ hero_description }}
                         </p>
                     </div>
 
@@ -62,6 +25,9 @@
                                 class="flex flex-wrap items-center gap-3 text-2xl font-medium"
                                 data-controller="conversion-selector"
                                 data-conversion-selector-formats-by-source-value="{{ formats_by_source|json_encode|e('html_attr') }}"
+                                data-conversion-selector-home-page-url-value="{{ path('app_home') }}"
+                                data-conversion-selector-source-page-template-value="{{ source_page_template }}"
+                                data-conversion-selector-pair-page-template-value="{{ pair_page_template }}"
                                 {% if selected_to is not empty %}data-conversion-selector-selected-to-value="{{ selected_to }}"{% endif %}
                             >
                                 <span>convert</span>
@@ -83,6 +49,7 @@
                                     name="to"
                                     aria-label="Target format"
                                     data-conversion-selector-target="toSelect"
+                                    data-action="change->conversion-selector#onToChange"
                                     {% if selected_from is empty %}disabled{% endif %}
                                 >
                                     <option value="" {% if selected_to is empty %}selected{% endif %}>to</option>
@@ -109,114 +76,12 @@
             </button>
         </div>
 
-        <section class="mx-auto max-w-6xl px-4 py-20">
-            <div class="mb-10 space-y-3 text-center">
-                <div class="badge badge-outline">Why OpenConvert</div>
-                <h2 class="text-3xl font-bold md:text-4xl">Built for reliable conversions at scale</h2>
-                <p class="mx-auto max-w-2xl text-base-content/70">
-                    The homepage is focused on clear conversion entry points and practical information for users and search engines.
-                </p>
-            </div>
+        {% if page_mode == 'home' %}
+            {% include 'components/home_info_section.html.twig' %}
+        {% else %}
+            {% include 'components/wiki_info_section.html.twig' %}
+        {% endif %}
 
-            <div class="grid gap-6 md:grid-cols-2">
-                <article class="card bg-base-100 shadow-md">
-                    <div class="card-body gap-4 md:flex-row md:items-start">
-                        <div class="rounded-box bg-base-200 p-3">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="size-8" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                                <path d="M7 2a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8.5L13.5 2H7Z"/>
-                                <path d="M13 2v6a1 1 0 0 0 1 1h5"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <h3 class="card-title">200+ formats supported</h3>
-                            <p>
-                                Convert common and niche formats across documents, images, audio, video, ebooks, and archives in one place.
-                            </p>
-                        </div>
-                    </div>
-                </article>
-
-                <article class="card bg-base-100 shadow-md">
-                    <div class="card-body gap-4 md:flex-row md:items-start">
-                        <div class="rounded-box bg-base-200 p-3">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="size-8" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                                <path fill-rule="evenodd" d="M12 2 4 5v6c0 5.25 3.44 10.06 8 11 4.56-.94 8-5.75 8-11V5l-8-3Zm3.35 7.85a1 1 0 0 0-1.41-1.41L11 11.38l-.94-.94a1 1 0 0 0-1.41 1.41l1.65 1.65a1 1 0 0 0 1.41 0l3.64-3.65Z" clip-rule="evenodd"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <h3 class="card-title">Security-first processing</h3>
-                            <p>
-                                File handling is isolated and designed for privacy-conscious workflows so your data stays under your control.
-                            </p>
-                        </div>
-                    </div>
-                </article>
-
-                <article class="card bg-base-100 shadow-md">
-                    <div class="card-body gap-4 md:flex-row md:items-start">
-                        <div class="rounded-box bg-base-200 p-3">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="size-8" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                                <path d="M14 4a2 2 0 1 0-4 0v1.5A3.5 3.5 0 0 0 6.5 9v2A3.5 3.5 0 0 0 10 14.46V20a2 2 0 1 0 4 0v-5.54A3.5 3.5 0 0 0 17.5 11V9A3.5 3.5 0 0 0 14 5.5V4Z"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <h3 class="card-title">High-quality output</h3>
-                            <p>
-                                Conversion defaults are tuned for quality while keeping speed predictable for single jobs and batch workloads.
-                            </p>
-                        </div>
-                    </div>
-                </article>
-
-                <article class="card bg-base-100 shadow-md">
-                    <div class="card-body gap-4 md:flex-row md:items-start">
-                        <div class="rounded-box bg-base-200 p-3">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="size-8" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                                <path d="M4 6a2 2 0 0 1 2-2h4.5a2 2 0 0 1 1.58.78l1.34 1.78a2 2 0 0 0 1.58.78H18a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6Z"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <h3 class="card-title">Developer-friendly API</h3>
-                            <p>
-                                Integrate OpenConvert into your apps to automate conversion tasks and keep your product workflows simple.
-                            </p>
-                        </div>
-                    </div>
-                </article>
-            </div>
-        </section>
-
-        <footer class="footer bg-base-300 px-4 py-10 text-base-content">
-            <div class="mx-auto grid w-full max-w-6xl gap-8 sm:grid-cols-2 lg:grid-cols-5 hidden">
-                <nav>
-                    <h3 class="footer-title">Company</h3>
-                    <a class="link link-hover" href="#">About</a>
-                    <a class="link link-hover" href="#">Security</a>
-                </nav>
-                <nav>
-                    <h3 class="footer-title">Resources</h3>
-                    <a class="link link-hover" href="#">Blog</a>
-                    <a class="link link-hover" href="#">Status</a>
-                </nav>
-                <nav>
-                    <h3 class="footer-title">Legal</h3>
-                    <a class="link link-hover" href="#">Privacy</a>
-                    <a class="link link-hover" href="#">Terms</a>
-                </nav>
-                <nav>
-                    <h3 class="footer-title">Contact</h3>
-                    <a class="link link-hover" href="#">Contact Us</a>
-                </nav>
-                <aside class="place-self-start lg:place-self-end lg:text-right">
-                    <p class="font-medium">OpenConvert</p>
-                </aside>
-            </div>
-        </footer>
-
-        <section class="bg-base-300 pb-12">
-            <p class="text-center text-xl font-semibold text-base-content/50">
-                Processed <span class="text-base-content/70">2,879,729,456 files</span> and counting.
-            </p>
-        </section>
+        {% include 'components/footer.html.twig' %}
     </div>
 {% endblock %}
