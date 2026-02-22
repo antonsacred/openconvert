@@ -61,6 +61,17 @@ func TestConversionsEndpoint(t *testing.T) {
 			t.Fatalf("expected non-empty formats in pair at index %d, got %v", i, pair)
 		}
 	}
+
+	foundPNGToJPG := false
+	for _, pair := range body.Output {
+		if pair[0] == "png" && pair[1] == "jpg" {
+			foundPNGToJPG = true
+			break
+		}
+	}
+	if !foundPNGToJPG {
+		t.Fatalf("expected response to include conversion [png, jpg], got %v", body.Output)
+	}
 }
 
 func TestOpenAPISpecEndpoint(t *testing.T) {
