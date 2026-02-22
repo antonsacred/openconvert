@@ -3,3 +3,6 @@ start:
 
 stop:
 	docker compose down
+
+test:
+	./bin/phpunit
