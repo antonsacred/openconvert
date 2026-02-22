@@ -1,0 +1,10 @@
+{
+    "compilerOptions": {
+        "paths": {
+            "@symfony/stimulus-bundle": [
+                "vendor/symfony/stimulus-bundle/assets/dist/loader.d.ts"
+            ]
+        },
+        "allowImportingTsExtensions": true
+    },
+}

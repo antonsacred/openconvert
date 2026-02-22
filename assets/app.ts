@@ -1,2 +1,2 @@
-import './stimulus_bootstrap.js';
+import './stimulus_bootstrap.ts';
 import './styles/app.css';

@@ -56,24 +56,39 @@
                     <div class="card border border-white/10 bg-black/20 shadow-xl">
                         <div class="card-body gap-6">
                             <h2 class="card-title text-2xl">Choose conversion</h2>
-                            <form id="conversion-selector" method="get" class="flex flex-wrap items-center gap-3 text-2xl font-medium">
+                            <form
+                                id="conversion-selector"
+                                method="get"
+                                class="flex flex-wrap items-center gap-3 text-2xl font-medium"
+                                data-controller="conversion-selector"
+                                data-conversion-selector-formats-by-source-value="{{ formats_by_source|json_encode|e('html_attr') }}"
+                                {% if selected_to is not empty %}data-conversion-selector-selected-to-value="{{ selected_to }}"{% endif %}
+                            >
                                 <span>convert</span>
-                                <select class="select select-bordered w-28 bg-base-100 text-base-content sm:w-32" name="from" aria-label="Source format">
-                                    <option value="pdf">pdf</option>
-                                    <option value="docx">docx</option>
-                                    <option value="jpg">jpg</option>
-                                    <option value="png">png</option>
-                                    <option value="mp4">mp4</option>
-                                    <option value="mp3">mp3</option>
+                                <select
+                                    class="select select-bordered w-28 bg-base-100 text-base-content sm:w-32"
+                                    name="from"
+                                    aria-label="Source format"
+                                    data-conversion-selector-target="fromSelect"
+                                    data-action="change->conversion-selector#onFromChange"
+                                >
+                                    <option value="" {% if selected_from is empty %}selected{% endif %}>from</option>
+                                    {% for source in formats_by_source|keys %}
+                                        <option value="{{ source }}" {% if selected_from == source %}selected{% endif %}>{{ source }}</option>
+                                    {% endfor %}
                                 </select>
                                 <span>to</span>
-                                <select class="select select-bordered w-28 bg-base-100 text-base-content sm:w-32" name="to" aria-label="Target format">
-                                    <option value="docx">docx</option>
-                                    <option value="pdf">pdf</option>
-                                    <option value="png">png</option>
-                                    <option value="jpg">jpg</option>
-                                    <option value="mp3">mp3</option>
-                                    <option value="mp4">mp4</option>
+                                <select
+                                    class="select select-bordered w-28 bg-base-100 text-base-content sm:w-32"
+                                    name="to"
+                                    aria-label="Target format"
+                                    data-conversion-selector-target="toSelect"
+                                    {% if selected_from is empty %}disabled{% endif %}
+                                >
+                                    <option value="" {% if selected_to is empty %}selected{% endif %}>to</option>
+                                    {% for target in available_targets %}
+                                        <option value="{{ target }}" {% if selected_to == target %}selected{% endif %}>{{ target }}</option>
+                                    {% endfor %}
                                 </select>
                             </form>
                             <p class="text-sm text-neutral-content/70">
