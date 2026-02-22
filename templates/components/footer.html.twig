@@ -25,8 +25,12 @@
     </div>
 </footer>
 
-<section class="bg-base-300 pb-12">
+<section
+    class="bg-base-300 pb-12"
+    data-controller="processed-counter"
+    data-processed-counter-start-value="{{ (date().timestamp / 2)|round(0, 'floor') }}"
+>
     <p class="text-center text-xl font-semibold text-base-content/50">
-        Processed <span class="text-base-content/70">2,879,729,456 files</span> and counting.
+        Processed <span class="text-base-content/70" data-processed-counter-target="count">{{ ((date().timestamp / 2)|round(0, 'floor'))|number_format(0, '.', ',') }}</span> files and counting.
     </p>
 </section>
