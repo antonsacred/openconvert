@@ -33,3 +33,7 @@ OpenConvert is a Symfony frontend/API gateway paired with a Go conversion servic
 - `/api/convert` is rate limited per client IP.
 - Requests and error payloads include `X-Request-Id` / `error.requestId` for cross-service tracing.
 - `/health` verifies converter reachability through `CONVERTER_API/health`.
+- Format info shown on converter pages is loaded from `config/format_info_data.json` (no runtime Wikipedia API calls).
+- Refresh format info manually when needed:
+  - `php bin/console app:format-info:refresh`
+  - optional output path override: `php bin/console app:format-info:refresh --output=config/format_info_data.json`

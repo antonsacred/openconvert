@@ -1,0 +1,118 @@
+{
+    "generatedAt": "2026-02-22T16:05:48+00:00",
+    "source": "manual-refresh-command",
+    "formats": {
+        "avif": {
+            "format": "avif",
+            "label": "AVIF",
+            "title": "AVIF",
+            "summary": "AV1 Image File Format (AVIF) is an open, royalty-free image file format specification for storing images or image sequences compressed with AV1 in the HEIF container format. It competes with HEIC, which uses the same container format built upon ISOBMFF, but HEVC for compression. Version 1.0.0 of the AVIF specification was finalized in February 2019. Version 1.1.0 was finalized in April 2022.",
+            "url": "https://en.wikipedia.org/wiki/AVIF"
+        },
+        "bmp": {
+            "format": "bmp",
+            "label": "BMP",
+            "title": "BMP file format",
+            "summary": "The BMP file format, or bitmap, is a raster graphics image file format used to store bitmap digital images, independently of the display device, especially on Microsoft Windows and OS/2 operating systems.",
+            "url": "https://en.wikipedia.org/wiki/BMP_file_format"
+        },
+        "gif": {
+            "format": "gif",
+            "label": "GIF",
+            "title": "GIF",
+            "summary": "The Graphics Interchange Format is a bitmap image format that was developed by a team at the online services provider CompuServe led by American computer scientist Steve Wilhite and released on June 15, 1987.",
+            "url": "https://en.wikipedia.org/wiki/GIF"
+        },
+        "heic": {
+            "format": "heic",
+            "label": "HEIC",
+            "title": "High Efficiency Image File Format",
+            "summary": "High Efficiency Image File Format (HEIF) is a digital container format for storing individual digital images and image sequences. The standard covers multimedia files that can also include other media streams, such as timed text, audio and video.",
+            "url": "https://en.wikipedia.org/wiki/High_Efficiency_Image_File_Format"
+        },
+        "heif": {
+            "format": "heif",
+            "label": "HEIF",
+            "title": "High Efficiency Image File Format",
+            "summary": "High Efficiency Image File Format (HEIF) is a digital container format for storing individual digital images and image sequences. The standard covers multimedia files that can also include other media streams, such as timed text, audio and video.",
+            "url": "https://en.wikipedia.org/wiki/High_Efficiency_Image_File_Format"
+        },
+        "jpeg": {
+            "format": "jpeg",
+            "label": "JPEG",
+            "title": "JPEG",
+            "summary": "JPEG is a commonly used method of lossy compression for digital images, particularly for those images produced by digital photography. The degree of compression can be adjusted, allowing a selectable trade off between storage size and image quality. JPEG typically achieves 10:1 compression with a loss in image quality that, while perceptible, is widely agreed upon to be acceptable. Since its introduction in 1992, JPEG has been the most widely used image compression standard in the world, and the most widely used digital image format, with several billion JPEG images produced every day as of 2015.",
+            "url": "https://en.wikipedia.org/wiki/JPEG"
+        },
+        "jpg": {
+            "format": "jpg",
+            "label": "JPG",
+            "title": "JPEG",
+            "summary": "JPEG is a commonly used method of lossy compression for digital images, particularly for those images produced by digital photography. The degree of compression can be adjusted, allowing a selectable trade off between storage size and image quality. JPEG typically achieves 10:1 compression with a loss in image quality that, while perceptible, is widely agreed upon to be acceptable. Since its introduction in 1992, JPEG has been the most widely used image compression standard in the world, and the most widely used digital image format, with several billion JPEG images produced every day as of 2015.",
+            "url": "https://en.wikipedia.org/wiki/JPEG"
+        },
+        "magick": {
+            "format": "magick",
+            "label": "MAGICK",
+            "title": "ImageMagick",
+            "summary": "ImageMagick, invoked from the command line as magick, is a free and open-source cross-platform software suite for displaying, creating, converting, modifying, and editing raster images. It can read and write over 200 image file formats and is widely used in open-source applications. ImageMagick was created by John Cristy in 1987.",
+            "url": "https://en.wikipedia.org/wiki/ImageMagick"
+        },
+        "mp3": {
+            "format": "mp3",
+            "label": "MP3",
+            "title": "MP3",
+            "summary": "MP3 is an audio coding format developed largely by the Fraunhofer Society in Germany under the lead of Karlheinz Brandenburg. It was designed to greatly reduce the amount of data required to represent audio, yet still sound like a faithful reproduction of the original uncompressed audio to most listeners; for example, compared to CD-quality digital audio, MP3 compression can commonly achieve a 75\u201395% reduction in size, depending on the bit rate. In popular usage, MP3 often refers to files of sound or music recordings stored in the MP3 file format (.mp3) on consumer electronic devices.",
+            "url": "https://en.wikipedia.org/wiki/MP3"
+        },
+        "mp4": {
+            "format": "mp4",
+            "label": "MP4",
+            "title": "MP4 file format",
+            "summary": "MP4 is a digital multimedia container format most commonly used to store video and audio, but it can also be used to store other data such as subtitles and still images. Like most modern container formats, it allows streaming over the Internet. The only filename extension for MPEG-4 Part 14 files as defined by the specification is .mp4.",
+            "url": "https://en.wikipedia.org/wiki/MP4_file_format"
+        },
+        "pdf": {
+            "format": "pdf",
+            "label": "PDF",
+            "title": "PDF",
+            "summary": "Portable Document Format (PDF), standardized as ISO 32000, is a file format developed by Adobe in 1993 used to present documents, including text formatting and images, in a manner independent of application software, hardware, and operating systems. Based on the PostScript language, each PDF file encapsulates a complete description of a fixed-layout flat document, including the text, fonts, vector graphics, raster images and other information needed to display it. PDF has its roots in \"The Camelot Project\" initiated by Adobe co-founder John Warnock in 1991.\nPDF was standardized as ISO 32000 in 2008. It is maintained by ISO TC 171 SC 2 WG8, of which the PDF Association is the committee manager. The last edition as ISO 32000-2:2020 was published in December 2020.",
+            "url": "https://en.wikipedia.org/wiki/PDF"
+        },
+        "png": {
+            "format": "png",
+            "label": "PNG",
+            "title": "PNG",
+            "summary": "Portable Network Graphics is a raster-graphics file format that supports lossless data compression. PNG was developed as an improved, non-patented replacement for Graphics Interchange Format (GIF).",
+            "url": "https://en.wikipedia.org/wiki/PNG"
+        },
+        "svg": {
+            "format": "svg",
+            "label": "SVG",
+            "title": "SVG",
+            "summary": "Scalable Vector Graphics (SVG) is an XML-based vector graphics format for defining two-dimensional graphics, having support for interactivity and animation. The SVG specification is an open standard developed by the World Wide Web Consortium since 1999.",
+            "url": "https://en.wikipedia.org/wiki/SVG"
+        },
+        "tif": {
+            "format": "tif",
+            "label": "TIF",
+            "title": "TIFF",
+            "summary": "Tag Image File Format or Tagged Image File Format, commonly known by the abbreviations TIFF or TIF, is an image file format for storing raster graphics images, popular among graphic artists, the publishing industry, and photographers.\nTIFF is widely supported by scanning, faxing, word processing, optical character recognition, image manipulation, desktop publishing, and page-layout applications.",
+            "url": "https://en.wikipedia.org/wiki/TIFF"
+        },
+        "tiff": {
+            "format": "tiff",
+            "label": "TIFF",
+            "title": "TIFF",
+            "summary": "Tag Image File Format or Tagged Image File Format, commonly known by the abbreviations TIFF or TIF, is an image file format for storing raster graphics images, popular among graphic artists, the publishing industry, and photographers.\nTIFF is widely supported by scanning, faxing, word processing, optical character recognition, image manipulation, desktop publishing, and page-layout applications.",
+            "url": "https://en.wikipedia.org/wiki/TIFF"
+        },
+        "webp": {
+            "format": "webp",
+            "label": "WEBP",
+            "title": "WebP",
+            "summary": "WebP is a raster graphics file format developed by Google and intended as a replacement for the JPEG, PNG, and GIF file formats on the web. It supports image compression, as well as animation and alpha compositing. The sister project for video is called WebM.",
+            "url": "https://en.wikipedia.org/wiki/WebP"
+        }
+    }
+}

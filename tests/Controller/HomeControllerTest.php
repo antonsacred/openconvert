@@ -133,18 +133,6 @@ final class HomeControllerTest extends WebTestCase
                 return new MockResponse('{"formats":{"jpg":["png"],"png":["jpg","webp"]}}', ['http_code' => 200]);
             }
 
-            if (str_contains($url, '/page/summary/Portable_Network_Graphics')) {
-                return new MockResponse('{"title":"Portable Network Graphics","extract":"PNG is a raster graphics file format.","content_urls":{"desktop":{"page":"https://en.wikipedia.org/wiki/Portable_Network_Graphics"}}}', ['http_code' => 200]);
-            }
-
-            if (str_contains($url, '/page/summary/JPEG')) {
-                return new MockResponse('{"title":"JPEG","extract":"JPEG is a commonly used method of lossy compression for digital images.","content_urls":{"desktop":{"page":"https://en.wikipedia.org/wiki/JPEG"}}}', ['http_code' => 200]);
-            }
-
-            if (str_contains($url, '/page/summary/WebP')) {
-                return new MockResponse('{"title":"WebP","extract":"WebP is an image format employing both lossy and lossless compression.","content_urls":{"desktop":{"page":"https://en.wikipedia.org/wiki/WebP"}}}', ['http_code' => 200]);
-            }
-
             return new MockResponse('{}', ['http_code' => 404]);
         });
     }
