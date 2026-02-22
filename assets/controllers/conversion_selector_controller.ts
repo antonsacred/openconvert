@@ -2,7 +2,7 @@ import { Controller } from '@hotwired/stimulus';
 
 type FormatsBySource = Record<string, string[]>;
 
-export default class extends Controller<HTMLFormElement> {
+export default class extends Controller<HTMLDivElement> {
     static targets = ['fromSelect', 'toSelect'] as const;
     static values = {
         formatsBySource: Object,
@@ -133,13 +133,21 @@ export default class extends Controller<HTMLFormElement> {
     }
 
     private visit(path: string): void {
+        const destination = new URL(path, window.location.origin);
+        const current = new URL(window.location.href);
+        const destinationPath = `${destination.pathname}${destination.search}`;
+        const currentPath = `${current.pathname}${current.search}`;
+        if (destinationPath === currentPath) {
+            return;
+        }
+
         const turbo = (window as Window & { Turbo?: { visit: (location: string) => void } }).Turbo;
         if (turbo !== undefined) {
-            turbo.visit(path);
+            turbo.visit(destinationPath);
 
             return;
         }
 
-        window.location.assign(path);
+        window.location.assign(destination.toString());
     }
 }

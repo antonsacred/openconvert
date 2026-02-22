@@ -1,0 +1,50 @@
+<section
+    data-controller="upload-queue"
+    data-upload-queue-formats-by-source-value="{{ formats_by_source|json_encode|e('html_attr') }}"
+    data-upload-queue-selected-from-value="{{ selected_from }}"
+    data-upload-queue-source-page-template-value="{{ source_page_template }}"
+>
+    <input
+        type="file"
+        class="hidden"
+        multiple
+        data-upload-queue-target="fileInput"
+        data-action="change->upload-queue#onFilesSelected"
+    >
+
+    <div class="mx-auto max-w-6xl px-4">
+        <div
+            class="alert alert-error mb-4 hidden"
+            role="alert"
+            data-upload-queue-target="error"
+        >
+            <span data-upload-queue-target="errorMessage"></span>
+        </div>
+    </div>
+
+    <div class="mx-auto -mt-9 flex max-w-6xl justify-center px-4" data-upload-queue-target="emptyState">
+        <button type="button" class="btn btn-error btn-lg w-56 gap-3 shadow-xl" data-action="click->upload-queue#openFilePicker">
+            <svg xmlns="http://www.w3.org/2000/svg" class="size-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M5 3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.5L15.5 3H5Zm6 4h2v3h3v2h-3v3h-2v-3H8v-2h3V7Z"/>
+            </svg>
+            Upload file
+        </button>
+    </div>
+
+    <div class="mx-auto max-w-6xl px-4 pb-8 hidden" data-upload-queue-target="queuePanel">
+        <div class="card border border-base-300 bg-base-100 shadow-sm">
+            <div class="card-body p-0">
+                <ul class="divide-y divide-base-300" data-upload-queue-target="fileList"></ul>
+            </div>
+        </div>
+
+        <div class="mt-6 flex flex-wrap items-center justify-between gap-3">
+            <button type="button" class="btn btn-neutral" data-action="click->upload-queue#openFilePicker">
+                Add more Files
+            </button>
+            <button type="button" class="btn btn-error" data-upload-queue-target="convertButton" disabled>
+                Convert
+            </button>
+        </div>
+    </div>
+</section>

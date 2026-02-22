@@ -54,6 +54,32 @@ final class HomeControllerTest extends WebTestCase
         self::assertSelectorTextContains('h1', 'File Converter');
         self::assertGreaterThan(0, $crawler->filter('select[name="from"] option[value="png"]')->count());
         self::assertNotNull($crawler->filter('select[name="to"]')->attr('disabled'));
+        self::assertCount(1, $crawler->filter('[data-controller="upload-queue"]'));
+        self::assertCount(1, $crawler->filter('input[type="file"][data-upload-queue-target="fileInput"]'));
+        self::assertCount(1, $crawler->filter('[data-upload-queue-target="fileList"]'));
+        self::assertCount(1, $crawler->filter('[data-upload-queue-target="error"]'));
+        self::assertGreaterThan(0, $crawler->filter('button[data-action="click->upload-queue#openFilePicker"]')->count());
+        self::assertCount(1, $crawler->filter('button[data-upload-queue-target="convertButton"]'));
+    }
+
+    public function testUploadControlsArePresentOnSourceAndPairPages(): void
+    {
+        $this->setConverterApi('http://converter-api:8081');
+
+        $client = static::createClient();
+        static::getContainer()->set(HttpClientInterface::class, $this->createMockHttpClient());
+
+        $sourceCrawler = $client->request('GET', '/png-converter');
+        self::assertResponseIsSuccessful();
+        self::assertCount(1, $sourceCrawler->filter('[data-controller="upload-queue"]'));
+        self::assertCount(1, $sourceCrawler->filter('input[type="file"][data-upload-queue-target="fileInput"]'));
+        self::assertCount(1, $sourceCrawler->filter('[data-upload-queue-target="fileList"]'));
+
+        $pairCrawler = $client->request('GET', '/png-to-jpg');
+        self::assertResponseIsSuccessful();
+        self::assertCount(1, $pairCrawler->filter('[data-controller="upload-queue"]'));
+        self::assertCount(1, $pairCrawler->filter('input[type="file"][data-upload-queue-target="fileInput"]'));
+        self::assertCount(1, $pairCrawler->filter('[data-upload-queue-target="fileList"]'));
     }
 
     public function testSourceConverterPageShowsWikiInfoAndTargets(): void

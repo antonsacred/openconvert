@@ -3,7 +3,15 @@
 {% block title %}{{ page_title }} | OpenConvert{% endblock %}
 
 {% block body %}
-    <div class="bg-base-200">
+    <div
+        class="bg-base-200"
+        data-controller="conversion-selector"
+        data-conversion-selector-formats-by-source-value="{{ formats_by_source|json_encode|e('html_attr') }}"
+        data-conversion-selector-home-page-url-value="{{ path('app_home') }}"
+        data-conversion-selector-source-page-template-value="{{ source_page_template }}"
+        data-conversion-selector-pair-page-template-value="{{ pair_page_template }}"
+        {% if selected_to is not empty %}data-conversion-selector-selected-to-value="{{ selected_to }}"{% endif %}
+    >
         <section class="oc-hero text-neutral-content">
             {% include 'components/header.html.twig' %}
 
@@ -23,12 +31,6 @@
                                 id="conversion-selector"
                                 method="get"
                                 class="flex flex-wrap items-center gap-3 text-2xl font-medium"
-                                data-controller="conversion-selector"
-                                data-conversion-selector-formats-by-source-value="{{ formats_by_source|json_encode|e('html_attr') }}"
-                                data-conversion-selector-home-page-url-value="{{ path('app_home') }}"
-                                data-conversion-selector-source-page-template-value="{{ source_page_template }}"
-                                data-conversion-selector-pair-page-template-value="{{ pair_page_template }}"
-                                {% if selected_to is not empty %}data-conversion-selector-selected-to-value="{{ selected_to }}"{% endif %}
                             >
                                 <span>convert</span>
                                 <select
@@ -67,14 +69,7 @@
             </div>
         </section>
 
-        <div class="mx-auto -mt-9 flex max-w-6xl justify-center px-4">
-            <button type="submit" form="conversion-selector" class="btn btn-error btn-lg w-56 gap-3 shadow-xl">
-                <svg xmlns="http://www.w3.org/2000/svg" class="size-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                    <path d="M5 3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.5L15.5 3H5Zm6 4h2v3h3v2h-3v3h-2v-3H8v-2h3V7Z"/>
-                </svg>
-                Select File
-            </button>
-        </div>
+        {% include 'components/upload_queue_section.html.twig' %}
 
         {% if page_mode == 'home' %}
             {% include 'components/home_info_section.html.twig' %}
