@@ -1,3 +1,7 @@
+x-php-base: &php-base
+  image: serversideup/php:8.5-fpm-nginx
+  volumes:
+    - .:/var/www/html
 
 services:
 ###> doctrine/doctrine-bundle ###
@@ -20,11 +24,20 @@ services:
 ###< doctrine/doctrine-bundle ###
 
   app:
-    image: serversideup/php:8.5-fpm-nginx
-    volumes:
-      - .:/var/www/html
+    <<: *php-base
     ports:
       - "8080:8080"
+    depends_on:
+      database:
+        condition: service_started
+
+  typescript-worker:
+    <<: *php-base
+    command: sh -c "php bin/console typescript:build --watch"
+    depends_on:
+      app:
+        condition: service_started
+
 volumes:
 ###> doctrine/doctrine-bundle ###
   database_data:

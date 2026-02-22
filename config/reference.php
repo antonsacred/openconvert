@@ -1455,6 +1455,13 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *     generate_final_classes?: bool|Param, // Default: true
  *     generate_final_entities?: bool|Param, // Default: false
  * }
+ * @psalm-type SensiolabsTypescriptConfig = array{
+ *     source_dir?: list<scalar|Param|null>,
+ *     binary_download_dir?: scalar|Param|null, // The directory where the SWC binary will be downloaded // Default: "%kernel.project_dir%/var"
+ *     swc_binary?: scalar|Param|null, // The SWC binary to use // Default: null
+ *     swc_config_file?: scalar|Param|null, // Path to .swcrc configuration file to use // Default: "%kernel.project_dir%/.swcrc"
+ *     swc_version?: scalar|Param|null, // The SWC version to use // Default: "v1.3.92"
+ * }
  * @psalm-type ConfigType = array{
  *     imports?: ImportsConfig,
  *     parameters?: ParametersConfig,
@@ -1468,6 +1475,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *     twig_extra?: TwigExtraConfig,
  *     security?: SecurityConfig,
  *     monolog?: MonologConfig,
+ *     sensiolabs_typescript?: SensiolabsTypescriptConfig,
  *     "when@dev"?: array{
  *         imports?: ImportsConfig,
  *         parameters?: ParametersConfig,
@@ -1484,6 +1492,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         security?: SecurityConfig,
  *         monolog?: MonologConfig,
  *         maker?: MakerConfig,
+ *         sensiolabs_typescript?: SensiolabsTypescriptConfig,
  *     },
  *     "when@prod"?: array{
  *         imports?: ImportsConfig,
@@ -1498,6 +1507,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         twig_extra?: TwigExtraConfig,
  *         security?: SecurityConfig,
  *         monolog?: MonologConfig,
+ *         sensiolabs_typescript?: SensiolabsTypescriptConfig,
  *     },
  *     "when@test"?: array{
  *         imports?: ImportsConfig,
@@ -1513,6 +1523,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         twig_extra?: TwigExtraConfig,
  *         security?: SecurityConfig,
  *         monolog?: MonologConfig,
+ *         sensiolabs_typescript?: SensiolabsTypescriptConfig,
  *     },
  *     ...<string, ExtensionType|array{ // extra keys must follow the when@%env% pattern or match an extension alias
  *         imports?: ImportsConfig,
