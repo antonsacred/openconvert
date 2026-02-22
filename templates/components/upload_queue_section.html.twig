@@ -3,6 +3,7 @@
     data-upload-queue-formats-by-source-value="{{ formats_by_source|json_encode|e('html_attr') }}"
     data-upload-queue-selected-from-value="{{ selected_from }}"
     data-upload-queue-source-page-template-value="{{ source_page_template }}"
+    data-upload-queue-convert-url-value="{{ path('app_api_convert') }}"
 >
     <input
         type="file"
@@ -42,7 +43,7 @@
             <button type="button" class="btn btn-neutral" data-action="click->upload-queue#openFilePicker">
                 Add more Files
             </button>
-            <button type="button" class="btn btn-error" data-upload-queue-target="convertButton" disabled>
+            <button type="button" class="btn btn-error gap-2" data-upload-queue-target="convertButton" data-action="click->upload-queue#convertQueue" disabled>
                 Convert
             </button>
         </div>

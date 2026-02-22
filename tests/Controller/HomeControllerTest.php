@@ -55,6 +55,7 @@ final class HomeControllerTest extends WebTestCase
         self::assertGreaterThan(0, $crawler->filter('select[name="from"] option[value="png"]')->count());
         self::assertNotNull($crawler->filter('select[name="to"]')->attr('disabled'));
         self::assertCount(1, $crawler->filter('[data-controller="upload-queue"]'));
+        self::assertCount(1, $crawler->filter('[data-upload-queue-convert-url-value="/api/convert"]'));
         self::assertCount(1, $crawler->filter('input[type="file"][data-upload-queue-target="fileInput"]'));
         self::assertCount(1, $crawler->filter('[data-upload-queue-target="fileList"]'));
         self::assertCount(1, $crawler->filter('[data-upload-queue-target="error"]'));
