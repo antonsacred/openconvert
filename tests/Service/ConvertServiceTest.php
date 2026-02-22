@@ -3,6 +3,7 @@
 namespace App\Tests\Service;
 
 use App\Dto\ConvertResult;
+use App\Dto\HealthStatusResult;
 use App\Service\ConvertService;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
@@ -82,12 +83,14 @@ final class ConvertServiceTest extends TestCase
             self::assertSame('http://converter-api:8081/v1/convert', $url);
             self::assertArrayHasKey('body', $options);
             self::assertIsString($options['body']);
+            self::assertArrayHasKey('normalized_headers', $options);
+            self::assertSame(['X-Request-Id: req-123'], $options['normalized_headers']['x-request-id'] ?? null);
 
             return new MockResponse('{"fileName":"sample.jpg","mimeType":"image/jpeg","contentBase64":"Y29udmVydGVk"}', ['http_code' => 200]);
         });
 
         $service = new ConvertService($httpClient, new ArrayAdapter(), 'http://converter-api:8081');
-        $result = $service->convert('png', 'jpg', 'sample.png', base64_encode('test-bytes'));
+        $result = $service->convert('png', 'jpg', 'sample.png', base64_encode('test-bytes'), 'req-123');
 
         self::assertInstanceOf(ConvertResult::class, $result);
         self::assertSame(200, $result->statusCode());
@@ -97,10 +100,21 @@ final class ConvertServiceTest extends TestCase
     public function testConvertReturnsErrorDtoWhenApiNotConfigured(): void
     {
         $service = new ConvertService(new MockHttpClient(), new ArrayAdapter(), null);
-        $result = $service->convert('png', 'jpg', 'sample.png', base64_encode('test-bytes'));
+        $result = $service->convert('png', 'jpg', 'sample.png', base64_encode('test-bytes'), 'req-123');
 
         self::assertInstanceOf(ConvertResult::class, $result);
         self::assertSame(503, $result->statusCode());
         self::assertSame('converter_api_not_configured', $result->payload()['error']['code'] ?? null);
+        self::assertSame('req-123', $result->payload()['error']['requestId'] ?? null);
+    }
+
+    public function testGetHealthStatusReturnsDtoWhenApiNotConfigured(): void
+    {
+        $service = new ConvertService(new MockHttpClient(), new ArrayAdapter(), null);
+        $result = $service->getHealthStatus();
+
+        self::assertInstanceOf(HealthStatusResult::class, $result);
+        self::assertSame(503, $result->statusCode());
+        self::assertSame('not_configured', $result->payload()['checks']['converter_api']['status'] ?? null);
     }
 }

@@ -5,6 +5,12 @@ framework:
     # Note that the session will be started ONLY if you read or write from it.
     session: true
 
+    rate_limiter:
+        convert_api:
+            policy: 'sliding_window'
+            limit: '%env(int:APP_CONVERT_RATE_LIMIT)%'
+            interval: '1 minute'
+
     #esi: true
     #fragments: true
 

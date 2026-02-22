@@ -56,6 +56,7 @@ final class HealthControllerTest extends WebTestCase
 
         self::assertSame('degraded', $payload['status'] ?? null);
         self::assertSame('not_configured', $payload['checks']['converter_api']['status'] ?? null);
+        self::assertNotSame('', $client->getResponse()->headers->get('X-Request-Id') ?? '');
     }
 
     public function testHealthReportsConverterApiNotRunningWhenUnreachable(): void
@@ -77,6 +78,7 @@ final class HealthControllerTest extends WebTestCase
         self::assertSame('degraded', $payload['status'] ?? null);
         self::assertSame('not_running', $payload['checks']['converter_api']['status'] ?? null);
         self::assertSame('http://converter-api:8081/health', $payload['checks']['converter_api']['url'] ?? null);
+        self::assertNotSame('', $client->getResponse()->headers->get('X-Request-Id') ?? '');
     }
 
     public function testHealthReportsConverterApiUpWhenHealthy(): void
@@ -98,6 +100,25 @@ final class HealthControllerTest extends WebTestCase
         self::assertSame('ok', $payload['status'] ?? null);
         self::assertSame('up', $payload['checks']['converter_api']['status'] ?? null);
         self::assertSame('http://converter-api:8081/health', $payload['checks']['converter_api']['url'] ?? null);
+        self::assertNotSame('', $client->getResponse()->headers->get('X-Request-Id') ?? '');
+    }
+
+    public function testHealthPropagatesIncomingRequestIdHeader(): void
+    {
+        $this->setConverterApi('http://converter-api:8081');
+
+        $mockClient = new MockHttpClient([
+            new MockResponse('{"status":"ok"}', ['http_code' => 200]),
+        ]);
+
+        $client = static::createClient();
+        static::getContainer()->set(HttpClientInterface::class, $mockClient);
+        $client->request('GET', '/health', server: [
+            'HTTP_X_REQUEST_ID' => 'req-health-001',
+        ]);
+
+        self::assertResponseIsSuccessful();
+        self::assertSame('req-health-001', $client->getResponse()->headers->get('X-Request-Id'));
     }
 
     private function setConverterApi(?string $value): void

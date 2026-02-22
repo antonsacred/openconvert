@@ -1,5 +1,7 @@
 package server
 
+import "encoding/base64"
+
 type HealthResponse struct {
 	Status string `json:"status" example:"ok"`
 }
@@ -28,8 +30,11 @@ type ErrorResponse struct {
 }
 
 type ErrorDetail struct {
-	Code    string `json:"code" example:"unsupported_conversion_pair"`
-	Message string `json:"message" example:"conversion from png to pdf is not supported"`
+	Code      string `json:"code" example:"unsupported_conversion_pair"`
+	Message   string `json:"message" example:"conversion from png to pdf is not supported"`
+	RequestID string `json:"requestId,omitempty" example:"req-abc123"`
 }
 
 var maxDecodedFileSizeBytes = 50 * 1024 * 1024
+var maxRequestBodyBytes = int64(base64.StdEncoding.EncodedLen(maxDecodedFileSizeBytes) + (2 * 1024 * 1024))
+var maxConcurrentConversions = 4

@@ -125,6 +125,12 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/server.ErrorResponse"
                         }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponse"
+                        }
                     }
                 }
             }
@@ -199,6 +205,10 @@ const docTemplate = `{
                 "message": {
                     "type": "string",
                     "example": "conversion from png to pdf is not supported"
+                },
+                "requestId": {
+                    "type": "string",
+                    "example": "req-abc123"
                 }
             }
         },

@@ -134,6 +134,10 @@ func TestConvertEndpoint(t *testing.T) {
 	if len(decoded) == 0 {
 		t.Fatalf("expected non-empty converted bytes")
 	}
+
+	if w.Header().Get("X-Request-Id") == "" {
+		t.Fatalf("expected X-Request-Id response header")
+	}
 }
 
 func TestConvertEndpointRejectsInvalidBase64(t *testing.T) {
@@ -152,7 +156,8 @@ func TestConvertEndpointRejectsInvalidBase64(t *testing.T) {
 
 	var response struct {
 		Error struct {
-			Code string `json:"code"`
+			Code      string `json:"code"`
+			RequestID string `json:"requestId"`
 		} `json:"error"`
 	}
 	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
@@ -179,7 +184,8 @@ func TestConvertEndpointRejectsMissingFields(t *testing.T) {
 
 	var response struct {
 		Error struct {
-			Code string `json:"code"`
+			Code      string `json:"code"`
+			RequestID string `json:"requestId"`
 		} `json:"error"`
 	}
 	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
@@ -216,7 +222,8 @@ func TestConvertEndpointRejectsUnsupportedPair(t *testing.T) {
 
 	var response struct {
 		Error struct {
-			Code string `json:"code"`
+			Code      string `json:"code"`
+			RequestID string `json:"requestId"`
 		} `json:"error"`
 	}
 	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
@@ -259,7 +266,8 @@ func TestConvertEndpointRejectsTooLargePayload(t *testing.T) {
 
 	var response struct {
 		Error struct {
-			Code string `json:"code"`
+			Code      string `json:"code"`
+			RequestID string `json:"requestId"`
 		} `json:"error"`
 	}
 	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
@@ -267,6 +275,123 @@ func TestConvertEndpointRejectsTooLargePayload(t *testing.T) {
 	}
 	if response.Error.Code != "payload_too_large" {
 		t.Fatalf("expected error code payload_too_large, got %q", response.Error.Code)
+	}
+
+	if response.Error.RequestID == "" {
+		t.Fatalf("expected requestId in error response")
+	}
+}
+
+func TestConvertEndpointRejectsTooLargeRequestBody(t *testing.T) {
+	router := newTestRouter()
+
+	oldMaxRequestBodyBytes := maxRequestBodyBytes
+	maxRequestBodyBytes = 128
+	t.Cleanup(func() {
+		maxRequestBodyBytes = oldMaxRequestBodyBytes
+	})
+
+	payload := map[string]string{
+		"from":          "png",
+		"to":            "jpg",
+		"fileName":      "input.png",
+		"contentBase64": strings.Repeat("a", 512),
+	}
+	body, err := json.Marshal(payload)
+	if err != nil {
+		t.Fatalf("failed to marshal payload: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/v1/convert", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusRequestEntityTooLarge {
+		t.Fatalf("expected status %d, got %d", http.StatusRequestEntityTooLarge, w.Code)
+	}
+
+	var response struct {
+		Error struct {
+			Code      string `json:"code"`
+			RequestID string `json:"requestId"`
+		} `json:"error"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+		t.Fatalf("failed to decode response JSON: %v", err)
+	}
+	if response.Error.Code != "payload_too_large" {
+		t.Fatalf("expected error code payload_too_large, got %q", response.Error.Code)
+	}
+}
+
+func TestConvertEndpointReturnsBusyWhenAllSlotsAreUsed(t *testing.T) {
+	router := newTestRouter()
+
+	oldMaxConcurrentConversions := maxConcurrentConversions
+	maxConcurrentConversions = 0
+	t.Cleanup(func() {
+		maxConcurrentConversions = oldMaxConcurrentConversions
+	})
+
+	conversionConcurrencyMu.Lock()
+	currentConcurrentConversions = 0
+	conversionConcurrencyMu.Unlock()
+
+	payload := map[string]string{
+		"from":          "png",
+		"to":            "jpg",
+		"fileName":      "input.png",
+		"contentBase64": base64.StdEncoding.EncodeToString(mustEncodePNG(t)),
+	}
+	body, err := json.Marshal(payload)
+	if err != nil {
+		t.Fatalf("failed to marshal payload: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/v1/convert", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusServiceUnavailable {
+		t.Fatalf("expected status %d, got %d", http.StatusServiceUnavailable, w.Code)
+	}
+
+	var response struct {
+		Error struct {
+			Code      string `json:"code"`
+			RequestID string `json:"requestId"`
+		} `json:"error"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+		t.Fatalf("failed to decode response JSON: %v", err)
+	}
+	if response.Error.Code != "converter_busy" {
+		t.Fatalf("expected error code converter_busy, got %q", response.Error.Code)
+	}
+	if response.Error.RequestID == "" {
+		t.Fatalf("expected requestId in error response")
+	}
+}
+
+func TestRequestIDHeaderIsPropagatedToResponse(t *testing.T) {
+	router := newTestRouter()
+
+	req := httptest.NewRequest(http.MethodGet, "/health", nil)
+	req.Header.Set("X-Request-Id", "req-test-001")
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, w.Code)
+	}
+
+	if got := w.Header().Get("X-Request-Id"); got != "req-test-001" {
+		t.Fatalf("expected X-Request-Id to be propagated, got %q", got)
 	}
 }
 

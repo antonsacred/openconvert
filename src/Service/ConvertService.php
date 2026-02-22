@@ -3,6 +3,7 @@
 namespace App\Service;
 
 use App\Dto\ConvertResult;
+use App\Dto\HealthStatusResult;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Contracts\Cache\CacheInterface;
 use Symfony\Contracts\Cache\ItemInterface;
@@ -68,25 +69,19 @@ final class ConvertService
         });
     }
 
-    /**
-     * @return array{statusCode: int, payload: array{status: string, checks: array{converter_api: array<string, mixed>}}}
-     */
-    public function getHealthStatus(): array
+    public function getHealthStatus(): HealthStatusResult
     {
         $healthUrl = $this->buildUrl('/health');
         if ($healthUrl === null) {
-            return [
-                'statusCode' => 503,
-                'payload' => [
-                    'status' => 'degraded',
-                    'checks' => [
-                        'converter_api' => [
-                            'status' => 'not_configured',
-                            'message' => 'CONVERTER_API is not configured.',
-                        ],
+            return new HealthStatusResult(503, [
+                'status' => 'degraded',
+                'checks' => [
+                    'converter_api' => [
+                        'status' => 'not_configured',
+                        'message' => 'CONVERTER_API is not configured.',
                     ],
                 ],
-            ];
+            ]);
         }
 
         try {
@@ -95,52 +90,43 @@ final class ConvertService
             ]);
             $statusCode = $response->getStatusCode();
             if ($statusCode < 200 || $statusCode >= 300) {
-                return [
-                    'statusCode' => 503,
-                    'payload' => [
-                        'status' => 'degraded',
-                        'checks' => [
-                            'converter_api' => [
-                                'status' => 'not_running',
-                                'message' => 'Converter API health endpoint did not return a successful status.',
-                                'url' => $healthUrl,
-                                'http_status' => $statusCode,
-                            ],
-                        ],
-                    ],
-                ];
-            }
-        } catch (TransportExceptionInterface) {
-            return [
-                'statusCode' => 503,
-                'payload' => [
+                return new HealthStatusResult(503, [
                     'status' => 'degraded',
                     'checks' => [
                         'converter_api' => [
                             'status' => 'not_running',
-                            'message' => 'Converter API health endpoint is not reachable.',
+                            'message' => 'Converter API health endpoint did not return a successful status.',
                             'url' => $healthUrl,
+                            'http_status' => $statusCode,
                         ],
                     ],
-                ],
-            ];
-        }
-
-        return [
-            'statusCode' => 200,
-            'payload' => [
-                'status' => 'ok',
+                ]);
+            }
+        } catch (TransportExceptionInterface) {
+            return new HealthStatusResult(503, [
+                'status' => 'degraded',
                 'checks' => [
                     'converter_api' => [
-                        'status' => 'up',
+                        'status' => 'not_running',
+                        'message' => 'Converter API health endpoint is not reachable.',
                         'url' => $healthUrl,
                     ],
                 ],
+            ]);
+        }
+
+        return new HealthStatusResult(200, [
+            'status' => 'ok',
+            'checks' => [
+                'converter_api' => [
+                    'status' => 'up',
+                    'url' => $healthUrl,
+                ],
             ],
-        ];
+        ]);
     }
 
-    public function convert(string $from, string $to, string $fileName, string $contentBase64): ConvertResult
+    public function convert(string $from, string $to, string $fileName, string $contentBase64, string $requestId): ConvertResult
     {
         $convertUrl = $this->buildUrl('/v1/convert');
         if ($convertUrl === null) {
@@ -148,6 +134,7 @@ final class ConvertService
                 503,
                 'converter_api_not_configured',
                 'CONVERTER_API is not configured.',
+                $requestId,
             );
         }
 
@@ -160,12 +147,16 @@ final class ConvertService
                 400,
                 'invalid_request',
                 'from, to, fileName and contentBase64 are required.',
+                $requestId,
             );
         }
 
         try {
             $upstreamResponse = $this->httpClient->request('POST', $convertUrl, [
                 'timeout' => 30,
+                'headers' => [
+                    'X-Request-Id' => $requestId,
+                ],
                 'json' => [
                     'from' => $normalizedFrom,
                     'to' => $normalizedTo,
@@ -178,6 +169,7 @@ final class ConvertService
                 503,
                 'converter_api_unreachable',
                 'Converter API is not reachable.',
+                $requestId,
             );
         }
 
@@ -194,6 +186,7 @@ final class ConvertService
                         502,
                         'invalid_upstream_response',
                         'Converter API returned invalid JSON payload.',
+                        $requestId,
                     );
                 }
             }
@@ -211,7 +204,7 @@ final class ConvertService
                 }
             }
 
-            return $this->errorResult($upstreamStatusCode, $errorCode, $errorMessage);
+            return $this->errorResult($upstreamStatusCode, $errorCode, $errorMessage, $requestId);
         }
 
         if (!\is_array($upstreamPayload)
@@ -226,6 +219,7 @@ final class ConvertService
                 502,
                 'invalid_upstream_response',
                 'Converter API response is missing required fields.',
+                $requestId,
             );
         }
 
@@ -293,12 +287,13 @@ final class ConvertService
         return $formats;
     }
 
-    private function errorResult(int $statusCode, string $code, string $message): ConvertResult
+    private function errorResult(int $statusCode, string $code, string $message, string $requestId): ConvertResult
     {
         return new ConvertResult($statusCode, [
             'error' => [
                 'code' => $code,
                 'message' => $message,
+                'requestId' => $requestId,
             ],
         ]);
     }

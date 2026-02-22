@@ -118,6 +118,12 @@
                         "schema": {
                             "$ref": "#/definitions/server.ErrorResponse"
                         }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponse"
+                        }
                     }
                 }
             }
@@ -192,6 +198,10 @@
                 "message": {
                     "type": "string",
                     "example": "conversion from png to pdf is not supported"
+                },
+                "requestId": {
+                    "type": "string",
+                    "example": "req-abc123"
                 }
             }
         },

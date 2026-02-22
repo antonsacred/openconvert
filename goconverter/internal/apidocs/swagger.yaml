@@ -48,6 +48,9 @@ definitions:
       message:
         example: conversion from png to pdf is not supported
         type: string
+      requestId:
+        example: req-abc123
+        type: string
     type: object
   server.ErrorResponse:
     properties:
@@ -134,6 +137,10 @@ paths:
             $ref: '#/definitions/server.ErrorResponse'
         "500":
           description: Internal Server Error
+          schema:
+            $ref: '#/definitions/server.ErrorResponse'
+        "503":
+          description: Service Unavailable
           schema:
             $ref: '#/definitions/server.ErrorResponse'
       summary: Convert file
