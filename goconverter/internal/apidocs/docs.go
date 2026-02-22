@@ -77,9 +77,9 @@ const docTemplate = `{
         "server.ConversionsResponse": {
             "type": "object",
             "properties": {
-                "output": {
-                    "type": "array",
-                    "items": {
+                "possibleConvertationFormats": {
+                    "type": "object",
+                    "additionalProperties": {
                         "type": "array",
                         "items": {
                             "type": "string"

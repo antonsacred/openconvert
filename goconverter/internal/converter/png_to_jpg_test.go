@@ -41,15 +41,20 @@ func TestPNGToJPGConverterConvertRejectsInvalidPNG(t *testing.T) {
 	}
 }
 
-func TestPossibleConversions(t *testing.T) {
-	output := PossibleConversions()
+func TestConversionTargetsBySource(t *testing.T) {
+	output := ConversionTargetsBySource()
 
 	if len(output) != 1 {
-		t.Fatalf("expected exactly 1 registered conversion, got %d", len(output))
+		t.Fatalf("expected exactly 1 source format, got %d", len(output))
 	}
 
-	if output[0][0] != "png" || output[0][1] != "jpg" {
-		t.Fatalf("expected conversion pair [png, jpg], got [%s, %s]", output[0][0], output[0][1])
+	targets, ok := output["png"]
+	if !ok {
+		t.Fatalf("expected output to include key png, got %v", output)
+	}
+
+	if len(targets) != 1 || targets[0] != "jpg" {
+		t.Fatalf("expected output for png to be [jpg], got %v", targets)
 	}
 }
 

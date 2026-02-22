@@ -14,7 +14,7 @@ type HealthResponse struct {
 }
 
 type ConversionsResponse struct {
-	Output [][2]string `json:"output"`
+	PossibleConvertationFormats map[string][]string `json:"possibleConvertationFormats"`
 }
 
 // healthHandler godoc
@@ -34,7 +34,9 @@ func healthHandler(c *gin.Context) {
 // @Success 200 {object} ConversionsResponse
 // @Router /conversions [get]
 func listConversionsHandler(c *gin.Context) {
-	c.JSON(http.StatusOK, ConversionsResponse{Output: converter.PossibleConversions()})
+	c.JSON(http.StatusOK, ConversionsResponse{
+		PossibleConvertationFormats: converter.ConversionTargetsBySource(),
+	})
 }
 
 // openAPISpecHandler godoc

@@ -2,12 +2,12 @@ basePath: /
 definitions:
   server.ConversionsResponse:
     properties:
-      output:
-        items:
+      possibleConvertationFormats:
+        additionalProperties:
           items:
             type: string
           type: array
-        type: array
+        type: object
     type: object
   server.HealthResponse:
     properties:

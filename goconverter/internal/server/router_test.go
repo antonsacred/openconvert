@@ -43,34 +43,27 @@ func TestConversionsEndpoint(t *testing.T) {
 	}
 
 	var body struct {
-		Output [][]string `json:"output"`
+		PossibleConvertationFormats map[string][]string `json:"possibleConvertationFormats"`
 	}
 	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
 		t.Fatalf("expected JSON response, got error: %v", err)
 	}
 
-	if len(body.Output) == 0 {
-		t.Fatalf("expected at least one conversion pair")
+	if len(body.PossibleConvertationFormats) == 0 {
+		t.Fatalf("expected at least one source format")
 	}
 
-	for i, pair := range body.Output {
-		if len(pair) != 2 {
-			t.Fatalf("expected conversion pair at index %d to have exactly 2 entries, got %d", i, len(pair))
-		}
-		if pair[0] == "" || pair[1] == "" {
-			t.Fatalf("expected non-empty formats in pair at index %d, got %v", i, pair)
-		}
+	targets, ok := body.PossibleConvertationFormats["png"]
+	if !ok {
+		t.Fatalf("expected key \"png\" in response, got %v", body.PossibleConvertationFormats)
 	}
 
-	foundPNGToJPG := false
-	for _, pair := range body.Output {
-		if pair[0] == "png" && pair[1] == "jpg" {
-			foundPNGToJPG = true
-			break
-		}
+	if len(targets) != 1 {
+		t.Fatalf("expected exactly one target for png, got %d (%v)", len(targets), targets)
 	}
-	if !foundPNGToJPG {
-		t.Fatalf("expected response to include conversion [png, jpg], got %v", body.Output)
+
+	if targets[0] != "jpg" {
+		t.Fatalf("expected png target to be jpg, got %v", targets)
 	}
 }
 

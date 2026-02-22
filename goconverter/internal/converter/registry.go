@@ -10,11 +10,15 @@ func RegisteredConverters() []Converter {
 	return output
 }
 
-func PossibleConversions() [][2]string {
+func ConversionTargetsBySource() map[string][]string {
 	registered := RegisteredConverters()
-	output := make([][2]string, 0, len(registered))
+	output := make(map[string][]string, len(registered))
+
 	for _, c := range registered {
-		output = append(output, [2]string{c.SourceFormat(), c.TargetFormat()})
+		source := c.SourceFormat()
+		target := c.TargetFormat()
+		output[source] = append(output[source], target)
 	}
+
 	return output
 }
