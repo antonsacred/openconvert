@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -53,17 +54,21 @@ func TestConversionsEndpoint(t *testing.T) {
 		t.Fatalf("expected at least one source format")
 	}
 
+	if len(body.PossibleConvertationFormats) != 3 {
+		t.Fatalf("expected 3 source formats, got %d (%v)", len(body.PossibleConvertationFormats), body.PossibleConvertationFormats)
+	}
+
 	targets, ok := body.PossibleConvertationFormats["png"]
 	if !ok {
 		t.Fatalf("expected key \"png\" in response, got %v", body.PossibleConvertationFormats)
 	}
 
-	if len(targets) != 1 {
-		t.Fatalf("expected exactly one target for png, got %d (%v)", len(targets), targets)
+	if len(targets) != 2 {
+		t.Fatalf("expected exactly two targets for png, got %d (%v)", len(targets), targets)
 	}
 
-	if targets[0] != "jpg" {
-		t.Fatalf("expected png target to be jpg, got %v", targets)
+	if !slices.Contains(targets, "jpg") || !slices.Contains(targets, "webp") {
+		t.Fatalf("expected png targets to include [jpg webp], got %v", targets)
 	}
 }
 

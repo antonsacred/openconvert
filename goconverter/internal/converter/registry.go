@@ -2,6 +2,11 @@ package converter
 
 var converters = []Converter{
 	NewPNGToJPGConverter(),
+	NewPNGToWEBPConverter(),
+	NewJPGToPNGConverter(),
+	NewJPGToWEBPConverter(),
+	NewWEBPToJPGConverter(),
+	NewWEBPToPNGConverter(),
 }
 
 func RegisteredConverters() []Converter {

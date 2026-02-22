@@ -1,20 +1,13 @@
 package converter
 
-import (
-	"bytes"
-	"fmt"
-	"image/jpeg"
-	"image/png"
-)
+import "github.com/h2non/bimg"
 
-const defaultJPEGQuality = 90
+type PNGToJPGConverter struct{}
 
-type PNGToJPGConverter struct {
-	quality int
-}
+var _ Converter = (*PNGToJPGConverter)(nil)
 
 func NewPNGToJPGConverter() *PNGToJPGConverter {
-	return &PNGToJPGConverter{quality: defaultJPEGQuality}
+	return &PNGToJPGConverter{}
 }
 
 func (c *PNGToJPGConverter) SourceFormat() string {
@@ -26,15 +19,5 @@ func (c *PNGToJPGConverter) TargetFormat() string {
 }
 
 func (c *PNGToJPGConverter) Convert(input []byte) ([]byte, error) {
-	img, err := png.Decode(bytes.NewReader(input))
-	if err != nil {
-		return nil, fmt.Errorf("decode png: %w", err)
-	}
-
-	var output bytes.Buffer
-	if err := jpeg.Encode(&output, img, &jpeg.Options{Quality: c.quality}); err != nil {
-		return nil, fmt.Errorf("encode jpg: %w", err)
-	}
-
-	return output.Bytes(), nil
+	return convertWithBIMG(input, c.SourceFormat(), c.TargetFormat(), bimg.JPEG)
 }
