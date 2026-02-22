@@ -15,6 +15,16 @@ func RegisteredConverters() []Converter {
 	return output
 }
 
+func FindConverter(source string, target string) (Converter, bool) {
+	for _, c := range converters {
+		if c.SourceFormat() == source && c.TargetFormat() == target {
+			return c, true
+		}
+	}
+
+	return nil, false
+}
+
 func ConversionTargetsBySource() map[string][]string {
 	registered := RegisteredConverters()
 	output := make(map[string][]string, len(registered))

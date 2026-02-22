@@ -8,25 +8,6 @@
     },
     "basePath": "/",
     "paths": {
-        "/conversions": {
-            "get": {
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "conversions"
-                ],
-                "summary": "List supported conversions",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/server.ConversionsResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/health": {
             "get": {
                 "produces": [
@@ -64,6 +45,82 @@
                     }
                 }
             }
+        },
+        "/v1/conversions": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "conversions"
+                ],
+                "summary": "List supported conversions",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/server.ConversionsResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/convert": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "conversions"
+                ],
+                "summary": "Convert file",
+                "parameters": [
+                    {
+                        "description": "Conversion request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/server.ConvertRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/server.ConvertResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponse"
+                        }
+                    },
+                    "413": {
+                        "description": "Request Entity Too Large",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponse"
+                        }
+                    },
+                    "415": {
+                        "description": "Unsupported Media Type",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -78,6 +135,71 @@
                             "type": "string"
                         }
                     }
+                }
+            }
+        },
+        "server.ConvertRequest": {
+            "type": "object",
+            "properties": {
+                "contentBase64": {
+                    "type": "string"
+                },
+                "fileName": {
+                    "type": "string",
+                    "example": "input.png"
+                },
+                "from": {
+                    "type": "string",
+                    "example": "png"
+                },
+                "to": {
+                    "type": "string",
+                    "example": "jpg"
+                }
+            }
+        },
+        "server.ConvertResponse": {
+            "type": "object",
+            "properties": {
+                "contentBase64": {
+                    "type": "string"
+                },
+                "fileName": {
+                    "type": "string",
+                    "example": "input.jpg"
+                },
+                "from": {
+                    "type": "string",
+                    "example": "png"
+                },
+                "mimeType": {
+                    "type": "string",
+                    "example": "image/jpeg"
+                },
+                "to": {
+                    "type": "string",
+                    "example": "jpg"
+                }
+            }
+        },
+        "server.ErrorDetail": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "unsupported_conversion_pair"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "conversion from png to pdf is not supported"
+                }
+            }
+        },
+        "server.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "$ref": "#/definitions/server.ErrorDetail"
                 }
             }
         },

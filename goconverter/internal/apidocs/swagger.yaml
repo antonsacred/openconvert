@@ -9,6 +9,51 @@ definitions:
           type: array
         type: object
     type: object
+  server.ConvertRequest:
+    properties:
+      contentBase64:
+        type: string
+      fileName:
+        example: input.png
+        type: string
+      from:
+        example: png
+        type: string
+      to:
+        example: jpg
+        type: string
+    type: object
+  server.ConvertResponse:
+    properties:
+      contentBase64:
+        type: string
+      fileName:
+        example: input.jpg
+        type: string
+      from:
+        example: png
+        type: string
+      mimeType:
+        example: image/jpeg
+        type: string
+      to:
+        example: jpg
+        type: string
+    type: object
+  server.ErrorDetail:
+    properties:
+      code:
+        example: unsupported_conversion_pair
+        type: string
+      message:
+        example: conversion from png to pdf is not supported
+        type: string
+    type: object
+  server.ErrorResponse:
+    properties:
+      error:
+        $ref: '#/definitions/server.ErrorDetail'
+    type: object
   server.HealthResponse:
     properties:
       status:
@@ -21,18 +66,6 @@ info:
   title: GoConverter API
   version: "1.0"
 paths:
-  /conversions:
-    get:
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/server.ConversionsResponse'
-      summary: List supported conversions
-      tags:
-      - conversions
   /health:
     get:
       produces:
@@ -57,4 +90,53 @@ paths:
       summary: OpenAPI spec
       tags:
       - docs
+  /v1/conversions:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/server.ConversionsResponse'
+      summary: List supported conversions
+      tags:
+      - conversions
+  /v1/convert:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Conversion request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/server.ConvertRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/server.ConvertResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/server.ErrorResponse'
+        "413":
+          description: Request Entity Too Large
+          schema:
+            $ref: '#/definitions/server.ErrorResponse'
+        "415":
+          description: Unsupported Media Type
+          schema:
+            $ref: '#/definitions/server.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/server.ErrorResponse'
+      summary: Convert file
+      tags:
+      - conversions
 swagger: "2.0"

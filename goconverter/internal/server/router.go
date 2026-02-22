@@ -11,9 +11,12 @@ func NewRouter() *gin.Engine {
 	router.Use(gin.Recovery())
 
 	router.GET("/health", healthHandler)
-	router.GET("/conversions", listConversionsHandler)
 	router.GET("/openapi.json", openAPISpecHandler)
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
+	v1 := router.Group("/v1")
+	v1.GET("/conversions", listConversionsHandler)
+	v1.POST("/convert", convertHandler)
 
 	return router
 }
