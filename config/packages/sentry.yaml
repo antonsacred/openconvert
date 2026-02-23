@@ -4,7 +4,7 @@ when@prod:
         options:
             # Add request headers, cookies, IP address and the authenticated user
             # see https://docs.sentry.io/platforms/php/data-management/data-collected/ for more info
-            # send_default_pii: true
+            send_default_pii: true
             traces_sample_rate: 0.1
             enable_logs: true
             ignore_exceptions:
@@ -27,13 +27,11 @@ when@prod:
 
     monolog:
         handlers:
-            sentry:
+            sentry_logs:
                 type: service
-                id: Sentry\Monolog\Handler
+                id: Sentry\SentryBundle\Monolog\LogsHandler
 
     services:
-        Sentry\Monolog\Handler:
+        Sentry\SentryBundle\Monolog\LogsHandler:
             arguments:
-                $hub: '@Sentry\State\HubInterface'
-                $level: !php/const Monolog\Logger::ERROR
-                $fillExtraContext: true
+                - !php/const Monolog\Logger::INFO
