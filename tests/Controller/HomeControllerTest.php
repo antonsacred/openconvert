@@ -29,6 +29,8 @@ final class HomeControllerTest extends WebTestCase
         self::assertGreaterThan(0, $crawler->filter('button[data-action="click->upload-queue#openFilePicker"]')->count());
         self::assertCount(1, $crawler->filter('button[data-upload-queue-target="downloadAllButton"][data-action="click->upload-queue#downloadAll"]'));
         self::assertCount(1, $crawler->filter('button[data-upload-queue-target="convertButton"]'));
+        self::assertGreaterThan(0, $crawler->filter('.navbar-center a[href="/heic-converter"]')->count());
+        self::assertGreaterThan(0, $crawler->filter('.dropdown-content a[href="/heic-converter"]')->count());
     }
 
     public function testUploadControlsArePresentOnSourceAndPairPages(): void
