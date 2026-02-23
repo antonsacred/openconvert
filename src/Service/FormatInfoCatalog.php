@@ -61,20 +61,6 @@ final class FormatInfoCatalog
         'webp' => 'WebP is an image format that supports efficient lossy and lossless compression.',
     ];
 
-    /**
-     * @return list<string>
-     */
-    public function knownFormats(): array
-    {
-        $formats = array_values(array_unique([
-            ...array_keys(self::WIKIPEDIA_PAGE_BY_FORMAT),
-            ...array_keys(self::FALLBACK_SUMMARY_BY_FORMAT),
-        ]));
-        sort($formats);
-
-        return $formats;
-    }
-
     public function pageTitleFor(string $format): string
     {
         $normalizedFormat = strtolower(trim($format));

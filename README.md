@@ -37,3 +37,7 @@ OpenConvert is a Symfony frontend/API gateway paired with a Go conversion servic
 - Refresh format info manually when needed:
   - `php bin/console app:format-info:refresh`
   - optional output path override: `php bin/console app:format-info:refresh --output=config/format_info_data.json`
+- Generate sitemap manually when needed:
+  - `php bin/console app:sitemap:generate --hostname=openconvert.example.com`
+  - optional output path override: `php bin/console app:sitemap:generate --hostname=openconvert.example.com --output=public/sitemap.xml`
+- Dynamic sitemap is available at `/sitemap.xml` and always emits `https://` URLs for the current request host.

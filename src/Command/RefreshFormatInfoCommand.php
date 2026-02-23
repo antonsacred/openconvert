@@ -51,7 +51,17 @@ final class RefreshFormatInfoCommand extends Command
             return Command::FAILURE;
         }
 
-        $formats = $this->resolveFormats($io);
+        try {
+            $formats = $this->resolveFormats();
+        } catch (\Throwable $exception) {
+            $io->error(sprintf(
+                'Could not load formats from converter API: %s',
+                $exception->getMessage(),
+            ));
+
+            return Command::FAILURE;
+        }
+
         if ($formats === []) {
             $io->error('No formats found to refresh.');
 
@@ -111,36 +121,26 @@ final class RefreshFormatInfoCommand extends Command
     /**
      * @return list<string>
      */
-    private function resolveFormats(SymfonyStyle $io): array
+    private function resolveFormats(): array
     {
         $formats = [];
 
-        try {
-            $formatsBySource = $this->conversionCatalogService->getFormats();
-            foreach ($formatsBySource as $source => $targets) {
-                $normalizedSource = strtolower(trim($source));
-                if ($normalizedSource !== '') {
-                    $formats[] = $normalizedSource;
-                }
+        $formatsBySource = $this->conversionCatalogService->getFormats();
+        foreach ($formatsBySource as $source => $targets) {
+            $normalizedSource = strtolower(trim($source));
+            if ($normalizedSource !== '') {
+                $formats[] = $normalizedSource;
+            }
 
-                foreach ($targets as $target) {
-                    $normalizedTarget = strtolower(trim($target));
-                    if ($normalizedTarget !== '') {
-                        $formats[] = $normalizedTarget;
-                    }
+            foreach ($targets as $target) {
+                $normalizedTarget = strtolower(trim($target));
+                if ($normalizedTarget !== '') {
+                    $formats[] = $normalizedTarget;
                 }
             }
-        } catch (\Throwable $exception) {
-            $io->warning(sprintf(
-                'Could not load formats from converter API (%s). Falling back to local known formats.',
-                $exception->getMessage(),
-            ));
         }
 
-        $formats = array_values(array_unique([
-            ...$formats,
-            ...$this->formatInfoCatalog->knownFormats(),
-        ]));
+        $formats = array_values(array_unique($formats));
         sort($formats);
 
         return $formats;

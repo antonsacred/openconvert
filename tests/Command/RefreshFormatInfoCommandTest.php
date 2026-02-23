@@ -10,7 +10,6 @@ use PHPUnit\Framework\TestCase;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
-use Symfony\Component\HttpClient\Exception\TransportException;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
 
@@ -66,11 +65,11 @@ final class RefreshFormatInfoCommandTest extends TestCase
         }
     }
 
-    public function testExecuteUsesKnownFormatsWhenConverterApiIsUnavailable(): void
+    public function testExecuteFailsWhenFormatsCannotBeLoaded(): void
     {
         $httpClient = new MockHttpClient(static function (string $method, string $url): MockResponse {
             if ('GET' === $method && 'http://converter-api:8081/v1/conversions' === $url) {
-                throw new TransportException('converter api unavailable');
+                return new MockResponse('{}', ['http_code' => 503]);
             }
 
             return new MockResponse('{}', ['http_code' => 404]);
@@ -91,17 +90,10 @@ final class RefreshFormatInfoCommandTest extends TestCase
         $outputPath = sys_get_temp_dir().'/format-info-refresh-'.bin2hex(random_bytes(8)).'.json';
 
         try {
-            self::assertSame(Command::SUCCESS, $tester->execute([
+            self::assertSame(Command::FAILURE, $tester->execute([
                 '--output' => $outputPath,
             ]));
-
-            $payload = json_decode((string) file_get_contents($outputPath), true, 512, JSON_THROW_ON_ERROR);
-            self::assertIsArray($payload);
-            self::assertArrayHasKey('formats', $payload);
-            self::assertIsArray($payload['formats']);
-            self::assertArrayHasKey('magick', $payload['formats']);
-            self::assertArrayHasKey('heic', $payload['formats']);
-            self::assertArrayHasKey('heif', $payload['formats']);
+            self::assertFileDoesNotExist($outputPath);
         } finally {
             @unlink($outputPath);
         }
