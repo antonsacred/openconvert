@@ -27,7 +27,7 @@ jobs:
           - service: go
             image_name: openconvert-go
             context: ./goconverter
-            dockerfile: ./Dockerfile
+            dockerfile: ./goconverter/Dockerfile
 
     steps:
       - name: Checkout
