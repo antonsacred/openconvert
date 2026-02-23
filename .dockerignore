@@ -1,0 +1,17 @@
+.git
+.github
+.idea
+.phpunit.cache
+node_modules
+vendor
+var
+tests
+goconverter
+
+docker-compose.yml
+docker-compose.yaml
+compose.override.yaml
+compose.yaml
+
+README.md
+AGENTS.md
