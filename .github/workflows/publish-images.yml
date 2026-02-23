@@ -37,6 +37,12 @@ jobs:
         id: namespace
         run: echo "value=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_OUTPUT"
 
+      - name: Resolve build metadata
+        id: meta
+        run: |
+          timestamp="$(date -u +%Y%m%d%H%M%S)"
+          echo "timestamp=${timestamp}" >> "$GITHUB_OUTPUT"
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
@@ -52,7 +58,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Docker metadata
-        id: meta
+        id: docker_meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ steps.namespace.outputs.value }}/${{ matrix.image_name }}
@@ -69,7 +75,9 @@ jobs:
           file: ${{ matrix.dockerfile }}
           platforms: linux/amd64,linux/arm64
           push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: |
+            ${{ steps.docker_meta.outputs.tags }}
+            ${{ steps.namespace.outputs.value }}/${{ matrix.image_name }}:${{ steps.meta.outputs.timestamp }}
+          labels: ${{ steps.docker_meta.outputs.labels }}
           cache-from: type=gha,scope=${{ matrix.service }}
           cache-to: type=gha,mode=max,scope=${{ matrix.service }}
