@@ -2,42 +2,26 @@
 
 namespace App\Tests\Controller;
 
+use App\Controller\ConvertController;
+use App\Service\ConversionExecutionService;
+use App\Tests\Support\ConverterApiClientOverrideTrait;
+use Psr\Log\LoggerInterface;
+use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpClient\Exception\TransportException;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Symfony\Component\RateLimiter\RateLimiterFactory;
+use Symfony\Component\RateLimiter\Storage\InMemoryStorage;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 final class ConvertControllerTest extends WebTestCase
 {
-    /**
-     * @var array<string, array{server: ?string, env: ?string, getenv: ?string}>
-     */
-    private array $originalEnvVars = [];
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->originalEnvVars['CONVERTER_API'] = $this->snapshotEnvVar('CONVERTER_API');
-        $this->originalEnvVars['APP_MAX_UPLOAD_BYTES'] = $this->snapshotEnvVar('APP_MAX_UPLOAD_BYTES');
-        $this->originalEnvVars['APP_CONVERT_RATE_LIMIT'] = $this->snapshotEnvVar('APP_CONVERT_RATE_LIMIT');
-    }
-
-    protected function tearDown(): void
-    {
-        foreach ($this->originalEnvVars as $name => $snapshot) {
-            $this->restoreEnvVar($name, $snapshot);
-        }
-
-        parent::tearDown();
-    }
+    use ConverterApiClientOverrideTrait;
 
     public function testConvertReturnsConvertedPayloadAndRequestIdHeader(): void
     {
-        $this->setEnvVar('CONVERTER_API', 'http://converter-api:8081');
-
         [$uploadedFile, $inputFilePath] = $this->createUploadedFile('sample.png');
         try {
             $mockClient = new MockHttpClient(static function (string $method, string $url, array $options): MockResponse {
@@ -61,8 +45,7 @@ final class ConvertControllerTest extends WebTestCase
                 return new MockResponse('{"fileName":"sample.jpg","mimeType":"image/jpeg","contentBase64":"Y29udmVydGVk"}', ['http_code' => 200]);
             });
 
-            $client = static::createClient();
-            static::getContainer()->set(HttpClientInterface::class, $mockClient);
+            $client = $this->createConfiguredClient('http://converter-api:8081', $mockClient);
             $client->request('POST', '/api/convert', [
                 'from' => 'png',
                 'to' => 'jpg',
@@ -86,11 +69,9 @@ final class ConvertControllerTest extends WebTestCase
 
     public function testConvertReportsConverterApiNotConfigured(): void
     {
-        $this->setEnvVar('CONVERTER_API', null);
-
         [$uploadedFile, $inputFilePath] = $this->createUploadedFile('sample.png');
         try {
-            $client = static::createClient();
+            $client = $this->createConfiguredClient(null);
             $client->request('POST', '/api/convert', [
                 'from' => 'png',
                 'to' => 'jpg',
@@ -110,16 +91,13 @@ final class ConvertControllerTest extends WebTestCase
 
     public function testConvertForwardsUpstreamError(): void
     {
-        $this->setEnvVar('CONVERTER_API', 'http://converter-api:8081');
-
         [$uploadedFile, $inputFilePath] = $this->createUploadedFile('sample.png');
         try {
             $mockClient = new MockHttpClient([
                 new MockResponse('{"error":{"code":"unsupported_conversion_pair","message":"conversion from png to pdf is not supported"}}', ['http_code' => 415]),
             ]);
 
-            $client = static::createClient();
-            static::getContainer()->set(HttpClientInterface::class, $mockClient);
+            $client = $this->createConfiguredClient('http://converter-api:8081', $mockClient);
             $client->request('POST', '/api/convert', [
                 'from' => 'png',
                 'to' => 'pdf',
@@ -138,16 +116,13 @@ final class ConvertControllerTest extends WebTestCase
 
     public function testConvertReturnsBadGatewayWhenUpstreamPayloadIsInvalid(): void
     {
-        $this->setEnvVar('CONVERTER_API', 'http://converter-api:8081');
-
         [$uploadedFile, $inputFilePath] = $this->createUploadedFile('sample.png');
         try {
             $mockClient = new MockHttpClient([
                 new MockResponse('{"unexpected":"payload"}', ['http_code' => 200]),
             ]);
 
-            $client = static::createClient();
-            static::getContainer()->set(HttpClientInterface::class, $mockClient);
+            $client = $this->createConfiguredClient('http://converter-api:8081', $mockClient);
             $client->request('POST', '/api/convert', [
                 'from' => 'png',
                 'to' => 'jpg',
@@ -166,16 +141,13 @@ final class ConvertControllerTest extends WebTestCase
 
     public function testConvertReportsUpstreamUnreachable(): void
     {
-        $this->setEnvVar('CONVERTER_API', 'http://converter-api:8081');
-
         [$uploadedFile, $inputFilePath] = $this->createUploadedFile('sample.png');
         try {
             $mockClient = new MockHttpClient(static function (): never {
                 throw new TransportException('Connection refused');
             });
 
-            $client = static::createClient();
-            static::getContainer()->set(HttpClientInterface::class, $mockClient);
+            $client = $this->createConfiguredClient('http://converter-api:8081', $mockClient);
             $client->request('POST', '/api/convert', [
                 'from' => 'png',
                 'to' => 'jpg',
@@ -194,12 +166,9 @@ final class ConvertControllerTest extends WebTestCase
 
     public function testConvertRejectsPayloadWhenUploadedFileIsTooLarge(): void
     {
-        $this->setEnvVar('CONVERTER_API', 'http://converter-api:8081');
-        $this->setEnvVar('APP_MAX_UPLOAD_BYTES', '4');
-
         [$uploadedFile, $inputFilePath] = $this->createUploadedFile('sample.png');
         try {
-            $client = static::createClient();
+            $client = $this->createConfiguredClient('http://converter-api:8081', maxUploadBytes: 4);
             $client->request('POST', '/api/convert', [
                 'from' => 'png',
                 'to' => 'jpg',
@@ -217,8 +186,6 @@ final class ConvertControllerTest extends WebTestCase
 
     public function testConvertRateLimitsRequests(): void
     {
-        $this->setEnvVar('CONVERTER_API', 'http://converter-api:8081');
-        $this->setEnvVar('APP_CONVERT_RATE_LIMIT', '1');
         $clientIp = sprintf('203.0.113.%d', random_int(11, 250));
 
         $calls = 0;
@@ -228,8 +195,7 @@ final class ConvertControllerTest extends WebTestCase
             return new MockResponse('{"fileName":"sample.jpg","mimeType":"image/jpeg","contentBase64":"Y29udmVydGVk"}', ['http_code' => 200]);
         });
 
-        $client = static::createClient();
-        static::getContainer()->set(HttpClientInterface::class, $mockClient);
+        $client = $this->createConfiguredClient('http://converter-api:8081', $mockClient, rateLimit: 1);
 
         [$firstUploadedFile, $firstInputFilePath] = $this->createUploadedFile('first.png');
         try {
@@ -267,67 +233,50 @@ final class ConvertControllerTest extends WebTestCase
         }
     }
 
-    /**
-     * @return array{server: ?string, env: ?string, getenv: ?string}
-     */
-    private function snapshotEnvVar(string $name): array
-    {
-        $getenvValue = getenv($name);
+    private function createConfiguredClient(
+        ?string $converterApi,
+        ?HttpClientInterface $httpClient = null,
+        ?int $maxUploadBytes = null,
+        ?int $rateLimit = null,
+    ): KernelBrowser {
+        $client = static::createClient();
+        $client->disableReboot();
+        $container = static::getContainer();
 
-        return [
-            'server' => $_SERVER[$name] ?? null,
-            'env' => $_ENV[$name] ?? null,
-            'getenv' => false === $getenvValue ? null : $getenvValue,
-        ];
-    }
+        $converterApiClient = $this->overrideConverterApiClient($converterApi, $httpClient);
+        $conversionExecutionService = new ConversionExecutionService($converterApiClient);
 
-    /**
-     * @param array{server: ?string, env: ?string, getenv: ?string} $snapshot
-     */
-    private function restoreEnvVar(string $name, array $snapshot): void
-    {
-        if ($snapshot['server'] === null) {
-            unset($_SERVER[$name]);
-        } else {
-            $_SERVER[$name] = $snapshot['server'];
+        $container->set(ConversionExecutionService::class, $conversionExecutionService);
+
+        if ($maxUploadBytes !== null || $rateLimit !== null) {
+            $rateLimiter = new RateLimiterFactory([
+                'id' => 'convert_api',
+                'policy' => 'sliding_window',
+                'limit' => $rateLimit ?? 30,
+                'interval' => '1 minute',
+            ], new InMemoryStorage());
+
+            $controller = new ConvertController(
+                $conversionExecutionService,
+                $rateLimiter,
+                $maxUploadBytes ?? 10_485_760,
+                $container->get(LoggerInterface::class),
+            );
+            $controller->setContainer($container);
+            $container->set(ConvertController::class, $controller);
         }
 
-        if ($snapshot['env'] === null) {
-            unset($_ENV[$name]);
-        } else {
-            $_ENV[$name] = $snapshot['env'];
-        }
-
-        if ($snapshot['getenv'] === null) {
-            putenv($name);
-        } else {
-            putenv(sprintf('%s=%s', $name, $snapshot['getenv']));
-        }
-    }
-
-    private function setEnvVar(string $name, ?string $value): void
-    {
-        if ($value === null) {
-            unset($_SERVER[$name]);
-            unset($_ENV[$name]);
-            putenv($name);
-
-            return;
-        }
-
-        $_SERVER[$name] = $value;
-        $_ENV[$name] = $value;
-        putenv(sprintf('%s=%s', $name, $value));
+        return $client;
     }
 
     /**
      * @return array{0: UploadedFile, 1: string}
      */
-    private function createUploadedFile(string $fileName): array
+    private function createUploadedFile(string $fileName, string $content = 'test-image-bytes'): array
     {
         $inputFilePath = tempnam(sys_get_temp_dir(), 'convert-input-');
         self::assertNotFalse($inputFilePath);
-        file_put_contents($inputFilePath, 'test-image-bytes');
+        file_put_contents($inputFilePath, $content);
 
         return [
             new UploadedFile(
