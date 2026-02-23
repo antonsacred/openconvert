@@ -6,6 +6,7 @@ when@prod:
             # see https://docs.sentry.io/platforms/php/data-management/data-collected/ for more info
             # send_default_pii: true
             traces_sample_rate: 0.1
+            enable_logs: true
             ignore_exceptions:
                 - 'Symfony\Component\ErrorHandler\Error\FatalError'
                 - 'Symfony\Component\Debug\Exception\FatalErrorException'
@@ -34,5 +35,5 @@ when@prod:
         Sentry\Monolog\Handler:
             arguments:
                 $hub: '@Sentry\State\HubInterface'
-                $level: !php/const Monolog\Logger::WARNING
+                $level: !php/const Monolog\Logger::ERROR
                 $fillExtraContext: true
