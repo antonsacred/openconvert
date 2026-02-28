@@ -38,7 +38,7 @@ final class SentryMonologConfigTest extends TestCase
             $prodConfig['services']['Sentry\\Monolog\\Handler']['arguments']['$hub'] ?? null,
         );
         self::assertSame(
-            Logger::WARNING,
+            Logger::ERROR,
             $prodConfig['services']['Sentry\\Monolog\\Handler']['arguments']['$level'] ?? null,
         );
         self::assertSame(
