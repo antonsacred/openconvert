@@ -20,8 +20,9 @@ final class HomeControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertCount(1, $crawler->filter('html[lang="en"]'));
         self::assertCount(1, $crawler->filter('meta[name="description"]'));
+        self::assertCount(1, $crawler->filter('main#main-content'));
         self::assertSame(
-            'OpenConvert is an online file converter. Convert audio, video, documents, images, archives, ebooks, spreadsheets and more with one streamlined workflow.',
+            'OpenConvert is an online file converter. Convert images, documents and more. Free to use, no card needed.',
             $crawler->filter('meta[name="description"]')->attr('content'),
         );
         self::assertSelectorTextContains('h1', 'File Converter');
@@ -49,6 +50,7 @@ final class HomeControllerTest extends WebTestCase
         $sourceCrawler = $client->request('GET', '/png-converter');
         self::assertResponseIsSuccessful();
         self::assertCount(1, $sourceCrawler->filter('[data-controller="upload-queue"]'));
+        self::assertCount(1, $sourceCrawler->filter('main#main-content'));
         self::assertCount(1, $sourceCrawler->filter('input[type="file"][data-upload-queue-target="fileInput"]'));
         self::assertCount(1, $sourceCrawler->filter('[data-upload-queue-target="fileList"]'));
         self::assertCount(1, $sourceCrawler->filter('button[data-upload-queue-target="downloadAllButton"]'));
@@ -56,6 +58,7 @@ final class HomeControllerTest extends WebTestCase
         $pairCrawler = $client->request('GET', '/png-to-jpg');
         self::assertResponseIsSuccessful();
         self::assertCount(1, $pairCrawler->filter('[data-controller="upload-queue"]'));
+        self::assertCount(1, $pairCrawler->filter('main#main-content'));
         self::assertCount(1, $pairCrawler->filter('input[type="file"][data-upload-queue-target="fileInput"]'));
         self::assertCount(1, $pairCrawler->filter('[data-upload-queue-target="fileList"]'));
         self::assertCount(1, $pairCrawler->filter('button[data-upload-queue-target="downloadAllButton"]'));
