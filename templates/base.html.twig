@@ -3,6 +3,7 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+        <meta name="description" content="{% block meta_description %}{{ page_description|default('OpenConvert is an online file converter for images and documents. Free to use, no subscription needed') }}{% endblock %}">
         <title>{% block title %}Welcome!{% endblock %}</title>
         <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
         <link rel="preload" href="{{ asset('fonts/space-grotesk-latin-wght-normal.woff2') }}" as="font" type="font/woff2">

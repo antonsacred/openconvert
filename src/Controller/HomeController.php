@@ -82,6 +82,7 @@ final class HomeController extends AbstractController
         return $this->render('home/index.html.twig', [
             'page_mode' => $pageMode,
             'page_title' => $heroTitle,
+            'page_description' => $heroDescription,
             'hero_title' => $heroTitle,
             'hero_description' => $heroDescription,
             'formats_by_source' => $formatsBySource,
@@ -141,6 +142,6 @@ final class HomeController extends AbstractController
                 );
         }
 
-        return 'OpenConvert is an online file converter. Convert audio, video, documents, images, archives, ebooks, spreadsheets and more with one streamlined workflow.';
+        return 'OpenConvert is an online file converter. Convert images, documents and more. Free to use, no card needed.';
     }
 }

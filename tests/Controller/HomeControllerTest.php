@@ -19,6 +19,11 @@ final class HomeControllerTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertCount(1, $crawler->filter('html[lang="en"]'));
+        self::assertCount(1, $crawler->filter('meta[name="description"]'));
+        self::assertSame(
+            'OpenConvert is an online file converter. Convert audio, video, documents, images, archives, ebooks, spreadsheets and more with one streamlined workflow.',
+            $crawler->filter('meta[name="description"]')->attr('content'),
+        );
         self::assertSelectorTextContains('h1', 'File Converter');
         self::assertGreaterThan(0, $crawler->filter('select[name="from"] option[value="png"]')->count());
         self::assertNotNull($crawler->filter('select[name="to"]')->attr('disabled'));
@@ -63,6 +68,11 @@ final class HomeControllerTest extends WebTestCase
         $crawler = $client->request('GET', '/png-converter');
 
         self::assertResponseIsSuccessful();
+        self::assertCount(1, $crawler->filter('meta[name="description"]'));
+        self::assertSame(
+            'Convert PNG images while keeping transparency and sharp details for graphics.',
+            $crawler->filter('meta[name="description"]')->attr('content'),
+        );
         self::assertSelectorTextContains('h1', 'PNG Converter');
         self::assertStringContainsString('Portable Network Graphics', $client->getResponse()->getContent());
         self::assertGreaterThan(0, $crawler->filter('a[href="/png-to-jpg"]')->count());
@@ -76,6 +86,12 @@ final class HomeControllerTest extends WebTestCase
         $client->request('GET', '/png-to-jpg');
 
         self::assertResponseIsSuccessful();
+        $crawler = $client->getCrawler();
+        self::assertCount(1, $crawler->filter('meta[name="description"]'));
+        self::assertSame(
+            'Convert PNG files to JPG with predictable output quality and fast processing.',
+            $crawler->filter('meta[name="description"]')->attr('content'),
+        );
         self::assertSelectorTextContains('h1', 'PNG to JPG Converter');
         self::assertStringContainsString('Portable Network Graphics', $client->getResponse()->getContent());
         self::assertStringContainsString('JPEG', $client->getResponse()->getContent());
