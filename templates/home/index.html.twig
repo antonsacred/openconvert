@@ -12,8 +12,9 @@
         data-conversion-selector-pair-page-template-value="{{ pair_page_template }}"
         {% if selected_to is not empty %}data-conversion-selector-selected-to-value="{{ selected_to }}"{% endif %}
     >
-        <section class="oc-hero text-neutral-content">
-            {% include 'components/header.html.twig' %}
+        <main id="main-content">
+            <section class="oc-hero text-neutral-content">
+                {% include 'components/header.html.twig' %}
 
             <div class="mx-auto max-w-6xl px-4 pb-24 pt-14 md:pb-28">
                 <div class="grid gap-10 lg:grid-cols-2 lg:items-center">
@@ -67,15 +68,17 @@
                     </div>
                 </div>
             </div>
-        </section>
+            </section>
 
-        {% include 'components/upload_queue_section.html.twig' %}
+            {% include 'components/upload_queue_section.html.twig' %}
 
-        {% if page_mode == 'home' %}
-            {% include 'components/home_info_section.html.twig' %}
-        {% else %}
-            {% include 'components/wiki_info_section.html.twig' %}
-        {% endif %}
+            {% if page_mode == 'home' %}
+                {% include 'components/home_info_section.html.twig' %}
+            {% else %}
+                {% include 'components/wiki_info_section.html.twig' %}
+            {% endif %}
+
+        </main>
 
         {% include 'components/footer.html.twig' %}
     </div>
