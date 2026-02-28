@@ -18,6 +18,7 @@ final class HomeControllerTest extends WebTestCase
         $crawler = $client->request('GET', '/');
 
         self::assertResponseIsSuccessful();
+        self::assertCount(1, $crawler->filter('html[lang="en"]'));
         self::assertSelectorTextContains('h1', 'File Converter');
         self::assertGreaterThan(0, $crawler->filter('select[name="from"] option[value="png"]')->count());
         self::assertNotNull($crawler->filter('select[name="to"]')->attr('disabled'));
