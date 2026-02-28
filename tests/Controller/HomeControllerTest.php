@@ -30,6 +30,7 @@ final class HomeControllerTest extends WebTestCase
         self::assertGreaterThan(0, $crawler->filter('button[data-action="click->upload-queue#openFilePicker"]')->count());
         self::assertCount(1, $crawler->filter('button[data-upload-queue-target="downloadAllButton"][data-action="click->upload-queue#downloadAll"]'));
         self::assertCount(1, $crawler->filter('button[data-upload-queue-target="convertButton"]'));
+        self::assertCount(1, $crawler->filter('button[aria-label="Open navigation menu"]'));
         self::assertGreaterThan(0, $crawler->filter('.navbar-center a[href="/heic-converter"]')->count());
         self::assertGreaterThan(0, $crawler->filter('.dropdown-content a[href="/heic-converter"]')->count());
         self::assertCount(1, $crawler->filter('head link[rel="preload"][as="font"][type="font/woff2"][href="/fonts/space-grotesk-latin-wght-normal.woff2"]'));
