@@ -17,7 +17,7 @@ when@prod:
             cache: # cache pools
                 enabled: true
             twig: # templating engine
-                enabled: true
+                enabled: false
             http_client: # Symfony HTTP client
                 enabled: true
         # Monolog integration:
