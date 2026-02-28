@@ -31,6 +31,9 @@ final class HomeControllerTest extends WebTestCase
         self::assertCount(1, $crawler->filter('button[data-upload-queue-target="convertButton"]'));
         self::assertGreaterThan(0, $crawler->filter('.navbar-center a[href="/heic-converter"]')->count());
         self::assertGreaterThan(0, $crawler->filter('.dropdown-content a[href="/heic-converter"]')->count());
+        self::assertCount(1, $crawler->filter('head link[rel="preconnect"][href="https://fonts.googleapis.com"]'));
+        self::assertCount(1, $crawler->filter('head link[rel="preconnect"][href="https://fonts.gstatic.com"][crossorigin]'));
+        self::assertCount(1, $crawler->filter('head link[rel="stylesheet"][href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap"]'));
     }
 
     public function testUploadControlsArePresentOnSourceAndPairPages(): void
